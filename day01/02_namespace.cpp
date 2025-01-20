@@ -6,4 +6,5 @@ namespace ptx{
     void display(){
         cout<< var <<endl;
     }
+    
 }
