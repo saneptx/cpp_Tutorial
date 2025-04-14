@@ -1,22 +1,28 @@
-#include<iostream>
-using namespace std;
-namespace ptx1{
-    int var = 10;
-    void add(int a,int b){
-        cout<<a + b<<endl;
+#include <iostream>
+using std::cout;
+using std::endl;
+
+namespace wd{
+    int num = 100;
+    void func(){
+        cout<<"wd func"<<endl;
     }
-    namespace ptx1_in{
-        int var = 20;
-        void display(){
-            cout<< ptx1::ptx1_in::var <<endl;
-        }
+}
+namespace hw{
+    int num = 10;
+    void func(){
+        cout << "hw func" << endl;
+        cout << num << endl;
     }
 }
 
-//using namespace ptx1;
-//using ptx1::add;
-int main(){
-    // add(2,3);
-    // ptx1::add(2,3);
-    ptx1::ptx1_in::display();
+void test(){
+    // wd::func;
+    hw::func();
 }
+int main(int args,char *argv[])
+{
+    test();
+    return 0;
+}
+
