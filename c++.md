@@ -1,8 +1,10 @@
 # C++
 
-## 命名空间
+## C与C++
 
-### 创建命名空间
+### 命名空间
+
+#### 创建命名空间
 
 ~~~c++
 namespace{
@@ -10,7 +12,7 @@ namespace{
 }
 ~~~
 
-### 使用命名空间
+#### 使用命名空间
 
 三种方式：
 
@@ -20,9 +22,9 @@ namespace{
 
 命名空间中你可以定义实体可以声明实体，但不能使用实体。使用命名空间中的实体一定是在命名空间之外。命名空间只是用来存放实体的。
 
-## const关键字
+### const关键字
 
-### 修饰内置类型*
+#### 修饰内置类型*
 
 const修饰的数据类型不能修改。在c语言中通常使用`#define MAX 100`来定义常量。这样并不会对数据类型进行指定，在c++中通常使用`const int MAX =100`来指定一个常量这样就会对常量数据类型进行检查。**const常量必须进行初始化**。`int const MAX = 100`这种写法也是可以的。
 
@@ -40,7 +42,7 @@ const常量和宏定义常量的区别：
 */
 ~~~
 
-### 修饰指针类型*
+#### 修饰指针类型*
 
 ~~~c++
 #include<iostream>
@@ -60,7 +62,7 @@ int main(){
 }
 ~~~
 
-## new/delete表达式
+### new/delete表达式
 
 new和delete并不是函数而是表达式。
 
@@ -91,7 +93,7 @@ int main(){
 }
 ~~~
 
-### new/delete与malloc/free的区别*
+#### new/delete与malloc/free的区别*
 
 ~~~c
 /*
@@ -103,7 +105,7 @@ new delete和malloc free的区别
 */
 ~~~
 
-## 引用
+### 引用
 
 引用是一个已定义变量的别名。
 
@@ -135,7 +137,7 @@ int & ref = number;
 */
 ~~~
 
-## 强制转换
+### 强制转换
 
 c++将强制转换分为不同的情况来讨论：
 
@@ -169,7 +171,7 @@ int main(){
 }
 ~~~
 
-## 函数重载
+### 函数重载
 
 函数的名字相同返回值相同但参数不同称为函数的重载。
 
@@ -207,7 +209,7 @@ nm overload.o #nm命令用于查看目标文件中的符号表信息
 
 在 C++ 中，函数重载通过 **名称修饰（name mangling）** 实现，即同一个函数名在编译后会被编码为不同的名字（根据参数类型），所以编译器能区分它们。
 
-### c与c++混合编程
+#### c与c++混合编程
 
 在需要采用c的方式调用时，可以将方法和包裹在`extern "c"`中
 
@@ -243,7 +245,7 @@ extern "C"//c与c++混合编程
 #endif
 ~~~
 
-### 默认参数
+#### 默认参数
 
 C++可以给函数定义默认参数值。通常，调用函数时，要为函数的每个参数给定对应的实参。
 
@@ -281,7 +283,7 @@ int main(){
 }
 ~~~
 
-## 内存布局
+### 内存布局
 
 ![image-20250415102135737](./c++.assets/image-20250415102135737.png)
 
@@ -293,7 +295,7 @@ int main(){
 - 文字常量区：只读段，存放程序中直接使用的常量，如const char * p = "hello";  hello 这个内容就存在文字常量区。 
 - 程序代码区：只读段，存放函数体的二进制代码。
 
-## inline关键字(内联函数)
+### inline关键字(内联函数)
 
 内联函数是C++的增强特性之一，用来降低程序的运行时间。当内联函数收到编译器的指 示时，即可发生内联：编译器将使用函数的定义体来替代函数调用语句，这种替代行为发 生在编译阶段而非程序运行阶段。
 
@@ -1174,5 +1176,685 @@ void test()
     delete [] pt2;
     pt2 = nullptr;
 }
+~~~
+
+#### new和delete表达式的工作步骤
+
+使用new表达式发生的三个步骤：
+
+1. 调用operator new标准库函数申请未类型化的空间
+2. 在该空间上调用该类型的构造函数初始化对象
+3. 返回指向该对象的相应类型的指针
+
+使用delete表达式时发生的两个步骤：
+
+1. 调用析构函数,回收数据成员申请的资源
+2. 调用operator delete库函数回收本对象所在的空间
+
+~~~c++
+class Computer {
+public:
+    Computer():_brand(new char[10]()),_price(1000){
+        strcpy(this->_brand,"Apple");
+        cout<<"Computer()"<<endl;
+    }
+    Computer(const char * brand,int price)
+    :_brand(new char[strlen(brand) + 1]())
+    ,_price(price){
+        strcpy(_brand,brand);
+        cout<<"Computer(str,int)"<<endl;
+    }
+    Computer(const Computer & rhs)//手动定义拷贝构造函数
+    :_brand(new char[strlen(rhs._brand)+1]())
+    ,_price(rhs._price){
+        strcpy(_brand,rhs._brand);
+    }
+    ~Computer(){
+        if(_brand){
+            delete[] _brand;
+            _brand = nullptr;
+            cout<<"~Computer()"<<endl;
+        }
+    }
+    void print();
+    void *operator new(size_t size){
+        cout<<"operator new"<<endl;
+        void * ret = malloc(size);
+        return ret;
+    }
+    void operator delete(void * ptr){
+        cout<<"operator delete"<<endl;
+        free(ptr);
+    }
+private:
+    char * _brand;
+    float _price;
+};
+void Computer::print(){
+    cout<<_brand<<" "<<_price<<endl;
+}
+int main(){
+    Computer *cp = new Computer("Apple",10000);
+    Computer *cArray = new  Computer[5]();
+    cp->print();
+    cArray->print();
+    (cArray+1)->print();
+    delete cp;
+    cp = nullptr;
+    delete[] cArray;
+    cArray = nullptr;
+    return 0;
+}
+~~~
+
+![image-20250416085951651](./c++.assets/image-20250416085951651.png)
+
+### 单例模式*
+
+单例模式是23种常用设计模式中最简单的设计模式之一，它提供了一种创建对象的方式， 确保只有单个对象被创建。这个设计模式主要目的是想在整个系统中只能出现类的一个实例，即一个类只有一个对象。
+
+#### 将单例对象创建在静态区
+
+~~~c++
+class Point{
+public:
+    static Point & getInstance(){//返回值设为引用避免复制
+        static Point pt(1,2);
+        return pt;
+    }
+    void print() const{
+        cout<<"x="<<_ix<<",y="<<_iy<<endl;
+    }
+private:
+    Point(int x,int y)://构造函数私有
+    _ix(x),_iy(y){
+        _ix = x;
+        _iy = y;
+    }
+    int _ix=0;
+    int _iy=0;
+};
+
+int main(){
+    Point &pt1 = Point::getInstance();
+    pt1.print();
+    Point &pt2 = Point::getInstance();
+    pt2.print();
+    cout<<&pt1<<endl;
+    cout<<&pt2<<endl;//从输出可以看出，pt1和pt2绑定的是同一个对象
+    return 0;
+}
+~~~
+
+1. 构造函数私有化。
+2. 通过`getInstance()`函数创建实例，该函数的返回值是一个引用避免复制，并且使用static关键字保证对象只创建一次。
+3. `static Point pt(1,2);`声明了一个函数内部的静态局部变量，它有如下特性：第一次调用`getInstacnce()`时会执行构造函数来初始化它，之后再次调用`getInstance()`函数时不会创建这个对象，而是返回之前那个已经存在的实例。这个对象存储在静态区而不是栈区，不会随着函数的退出二销毁。
+
+#### 将单例模式创建在堆区
+
+~~~c++
+class Point{
+public:
+    static Point* getInstance(){//返回值设为引用避免复制
+        Point *pt = new Point(1,2);
+        return pt;
+    }
+    void print() const{
+        cout<<"x="<<_ix<<",y="<<_iy<<endl;
+    }
+private:
+    Point(int x,int y)://构造函数私有
+    _ix(x),_iy(y){
+        _ix = x;
+        _iy = y;
+    }
+    Point(const Point &rhs)
+    :_ix(rhs._ix)
+    ,_iy(rhs._iy){
+        cout<<"call copy function"<<endl;
+    }
+    int _ix=0;
+    int _iy=0;
+};
+
+int main(){
+    Point *pt1 = Point::getInstance();
+    pt1->print();
+    Point *pt2 = Point::getInstance();
+    pt2->print();
+    cout<<pt1<<endl;
+    cout<<pt2<<endl;//从输出可以看出，pt1和pt2绑定的是同一个对象
+    return 0;
+}
+~~~
+
+1. 构造函数私有化
+2. 通过静态成员函数`getInstacnce()`创建堆对象，返回Point*类型的指针
+3. 通过静态成员函数完成堆对象的回收
+
+#### 单例模式的应用场景
+
+1. 有频繁实例化然后销毁的情况，也就是频繁的 new 对象，可以考虑单例模式；
+2. 创建对象时耗时过多或者耗资源过多，但又经常用到的对象；
+3. 当某个资源需要在整个程序中只有一个实例时，可以使用单例模式进行管理（全局资源管理）。例如数据库连接池、日志记录器等；
+4. 当需要读取和管理程序配置文件时，可以使用单例模式确保只有一个实例来管理配置文件的读取和写入操作（配置文件管理）；
+5. 在多线程编程中，线程池是一种常见的设计模式。使用单例模式可以确保只有一个线程池实例，方便管理和控制线程的创建和销毁；
+6. GUI应用程序中的全局状态管理：在GUI应用程序中，可能需要管理一些全局状态，例 如用户信息、应用程序配置等。使用单例模式可以确保全局状态的唯一性和一致性。
+
+### c++字符串
+
+C++ 提供了 std::string （后面简写为 string ）类用于字符串的处理。 string 类定义在C++ 头文件< string > 中。完全可以把 string 当成是 C++ 的内置数据类型，放在和 int 、 double 等内置类型同等位置上。
+
+#### 字符串常用操作
+
+~~~c++
+string str1 = "hello";//初始化一个字符串
+string str2 = string(str1,3);//从已有的str1字符串开始构造一个新的字符串知道结尾
+string str3 = string(str1);//拷贝str1字符串
+string str4 = str1 + str3;//拼接字符串
+string str5 = str1 + "world!";//拼接字符串
+string str6 = string("hello world",5);//截取前五个字符构造字符串
+cout<<str1<<endl;
+cout<<str2<<endl;
+cout<<str3<<endl;
+cout<<str4<<endl;
+cout<<str5<<endl;
+cout<<str6<<endl;
+string str = string();//创建空字符串
+if(str.empty())
+    cout<<"Empty string!"<<endl;
+cout<<str1.size()<<endl;//获取字符数
+cout<<str1.length()<<endl;
+if(str1 == str3)//判断两个字符串是否一致
+    cout<<"Same string!"<<endl;
+~~~
+
+#### 字符串遍历*
+
+**string对象可以通过下标访问**
+
+~~~c++
+for(size_t idx = 0;idx < str3.size();++idx){//普通for循环变量
+    cout<<str3[idx]<<" ";
+}
+cout<<endl;
+~~~
+
+需要注意的是操作符[]并不检查索引是否有效，如果索引超出范围，会引起未定义的行 为。而函数 at() 会检查，如果使用 at()的时候索引无效，会抛出 out_of_range 异常
+
+**增强for循环遍历**
+
+~~~c++
+for(auto & ch: str3){//增强for循环遍历
+    cout<<ch<<" ";
+}
+cout<<endl;
+~~~
+
+针对容器，可以使用增强for循环进行遍历其中的元素。增强for循环经常和auto关键字一起 使用，auto关键字可以自动推导类型。
+
+**迭代器方式遍历**
+
+~~~c++
+auto it = str3.begin();//迭代器遍历
+while(it != str3.end()){
+    cout<<*it<<" ";
+    ++it;
+}
+cout<<endl;
+~~~
+
+string字符串利用连续空间存储字符，所以可以利用地址遍历。这里我们提出一个概念——迭代器。迭代器可以理解为是广义的指针。它可以像指针一样进行解引用、移位等操作。 迭代器是容器用来访问元素的重要手段，容器都有相应的函数来获取特定的迭代器（此处可以简单理解为指向特定元素的指针）。
+
+begin函数返回首迭代器（指向首个元素的指针）；end函数返回尾后迭代器（指向最后一个元素的后一位的指针）
+
+![image-20250416103855928](./c++.assets/image-20250416103855928.png)
+
+### c++动态数组
+
+C++中，std::vector（向量）是一个动态数组容器，能存放任意类型的数据。其动态性主要体现在以下几个方面：
+
+1. 动态大小：` std::vector `可以根据需要自动调整自身的大小。它在内部管理一个动态 分配的数组，可以根据元素的数量进行自动扩容或缩减。当元素数量超过当前容量时， `std::vector`会重新分配内存，并将元素复制到新的内存位置。这使得`std::vector`能够根据需要动态地增长或缩小容量，而无需手动管理内存。
+2.  动态插入和删除： `std::vector`允许在任意位置插入或删除元素，而不会影响其他元 素的位置。当插入新元素时，`std::vector`会自动调整容量，并将后续元素向后移动以腾出空间。同样地，当删除元素时，` std::vector` 会自动调整容量，并将后续元素 向前移动以填补空缺。
+3. 动态访问： `std::vector`提供了随机访问元素的能力。可以通过索引直接访问容器中 的元素，而不需要遍历整个容器。这使得对元素的访问具有常数时间复杂度 （O(1)），无论容器的大小如何。
+
+#### vector的构造
+
+~~~c++
+vector<int> numbers;//无参构造，仅指明vector存放元素的种类，没有存放元素
+vector<long> numbers2(10);//存放10个0
+vector<long> numbers3(10,20); //存放10个20
+vector<int> numbers4{1,2,3,4,5,6,7};//直接指明存放的所有元素
+vector<int> numbers5(numbers4.begin(),numbers4.end() - 3);//使用迭代器方式初始化
+~~~
+
+#### vector的常用操作
+
+~~~c++
+iterator begin();  //返回首位迭代器
+iterator end();  //返回尾后迭代器
+bool empty() const; //判空
+size_type size() const; //返回容器中存放的元素个数
+size_type capacity() const; //返回容器容量（最多可以存放元素的个数）
+void push_back(const T& value); //在最后一个元素的后面再存放元素
+void pop_back(); //删除最后一个元素
+void clear(); //清空所有元素，但不释放空间
+void shrink_to_fit();  //释放多余的空间（可以存放元素但没有存放运算的空间）
+void reserve(size_type new_cap);//申请空间，不存放元素
+~~~
+
+**vector不仅能够存放内置类型变量，也能存放自定义类型对象和其他容器**
+
+#### vector的动态扩容
+
+当vector存放满后，仍然追加存放元素，vector会进行自动扩容。
+
+~~~c++
+vector<int> numbers;
+cout << numbers.size() << endl;
+cout << numbers.capacity() << endl;
+
+numbers.push_back(1);
+cout << numbers.size() << endl;
+cout << numbers.capacity() << endl;
+
+numbers.push_back(1);
+cout << numbers.size() << endl;
+cout << numbers.capacity() << endl;
+
+numbers.push_back(1);
+cout << numbers.size() << endl;
+cout << numbers.capacity() << endl;
+
+numbers.push_back(1);
+numbers.push_back(1);
+cout << numbers.size() << endl;
+cout << numbers.capacity() << endl;
+~~~
+
+![image-20250416111150061](./c++.assets/image-20250416111150061.png)
+
+vector的容量是按照指数增长的：`0 -> 1 -> 2 -> 4 -> 8...`，每当存储的元素数量达到容器容量时再次添加元素就会将容量扩大到原来的一倍。
+
+#### vector的底层实现
+
+利用sizeof查看vector对象的大小时，发现无论存放的元素类型、数量如何，其大小始终为 24个字节（64位环境）因为vector对象是由三个指针组成：
+
+![image-20250416111632167](./c++.assets/image-20250416111632167.png)
+
+**_start指向当前数组中第一个元素存放的位置**
+
+**_finish指向当前数组中最后一个元素存放的下一个位置**
+
+**_end_of_storage指向当前数组能够存放元素的最后一个空间的下一个位置**
+
+可以得出：
+
+**size() :  _finish - _start**
+
+**capacity():  _end_of_storage - start**
+
+## c++输入输出流
+
+C++ 的输入与输出包括以下3方面的内容:
+
+1. 对系统指定的标准设备的输入和输出。即从键盘输入数据，输出到显示器屏幕。这 种输入输出称为标准的输入输出，简称标准 I/O 。
+2.  以外存磁盘文件为对象进行输入和输出，即从磁盘文件输入数据，数据输出到磁盘文件。以外存文件为对象的输入输出称为文件的输入输出，简称文件 I/O 。
+3. 对内存中指定的空间进行输入和输出。通常指定一个字符数组作为存储空间（实际上可以利用该空间存储任何信息）。这种输入和输出称为字符串输入输出，简称串 I/O 。
+
+|     类名      |       作用       |  头文件  |
+| :-----------: | :--------------: | :------: |
+|    istream    |    通用输入流    | iostream |
+|    ostream    |    通用输出流    | iostream |
+|   iostream    |  通用输入输出流  | iostream |
+|   ifstream    |    文件输入流    | fstream  |
+|    oftream    |    文件输出流    | fstream  |
+|    fstream    |  文件输入输出流  | fstream  |
+| istringstream |   字符串输入流   | sstream  |
+| ostringstream |   字符串输出流   | sstream  |
+| stringstream  | 字符串输入输出流 | sstream  |
+
+继承图：
+
+![image-20250416140404994](./c++.assets/image-20250416140404994.png)
+
+### 流的四种状态
+
+IO 操作与生俱来的一个问题是可能会发生错误，一些错误是可以恢复的，另一些是不可以 的。在C++ 标准库中，用 iostate 来表示流的状态，不同的编译器 iostate 的实现可能不一 样，不过都有四种状态：
+
+**badbit**：表示发生**系统级的错误**，如不可恢复的读写错误。通常情况下一旦 badbit 被置 位，流就无法再使用了。
+
+**failbit**：表示发生可恢复的错误，如期望读取一个数值，却读出一个字符等错误。这种问 题通常是可以修改的，流还可以继续使用。
+
+**efobit**：表示**到达流结尾位置**， 此时eofbit 和 failbit 都会被置位。
+
+**goodbit**：表示流处于**有效状态**。流在有效状态下，才能正常使用。如果 badbit 、 failbit  和 eofbit 任何一个被置位，则流无法正常使用。
+
+判断流的状态：
+
+~~~c++
+bool good() const
+bool bad() const
+bool fail() const
+bool eof() const
+~~~
+
+### 标准输入输出流
+
+对系统指定的标准设备的输入和输出。即从键盘输入数据，输出到显示器屏幕。这种输入 输出称为标准输入输出，简称标准 I/O。 C++标准库定义了三个预定义的标准输入输出流对象，分别是  std::cin  、 std::cout 和 std::cerr  。它们分别对应于标准输入设备（通常是键盘）、标准输出设备（通常是显示 器）和标准错误设备（通常是显示器）。
+
+#### 标准输入流
+
+istream 类定义了一个全局输入流对象，即 cin , 代表的是标准输入，它从标准输入设备 (键盘)获取数据，程序中的变量通过流提取符 “>>”（输入流符号） 从流中提取数据。 流提取符 “>>” 从流中提取数据时通常跳过输入流中的空格、 tab 键、换行符等空白字符。 只有在输入完数据再按回车键后，该行数据才被送入键盘**缓冲区**，形成输入流，提取运算 符 “>>” 才能从中提取数据。需要注意保证从流中读取数据能正常进行。
+
+~~~c++
+void printStreamStatus(std::istream & is){
+    cout << "is's goodbit:" << is.good() << endl;
+    cout << "is's badbit:" << is.bad() << endl;
+    cout << "is's failbit:" << is.fail() << endl;
+    cout << "is's eofbit:" << is.eof() << endl;
+}
+int main(){
+    printStreamStatus(cin);
+    int num1 = 0,num2 = 0;
+    cin >> num1 >> num2;
+    cout<<"num1:"<<num1<<" num2:"<<num2<<endl;
+    if(!cin.good()){
+        cin.clear();//恢复流的状态
+        cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');//清空缓冲区
+        cout << endl;
+        printStreamStatus(cin);
+    }
+    cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');//清空缓冲区
+    string line;
+    //cin>>line;//cin会跳过空格、table、换行符等空白字符
+    getline(cin,line);//一般使用getline获取字符串
+    cout<<"line:"<<line<<endl;
+    if(!cin.good()){
+        cin.clear();//恢复流的状态
+        cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');//清空缓冲区
+        cout << endl;
+        printStreamStatus(cin);
+    }
+    printStreamStatus(cin);
+    return 0;
+}
+~~~
+
+#### 缓冲区
+
+在标准输入输出流的测试中发现，流有着缓冲机制。缓冲区又称为缓存，它是内存空间的 一部分。也就是说，在内存空间中预留了一定的存储空间，这些存储空间用来缓冲输入或 输出的数据，这部分预留的空间就叫做缓冲区。缓冲区根据其对应的是输入设备还是输出 设备，分为输入缓冲区和输出缓冲区。
+
+缓冲机制分为三种类型： **全缓冲、行缓冲和不带缓冲**。
+全缓冲：在这种情况下，当填满缓冲区后才进行实际 I/O 操作。全缓冲的典型代表是对 磁盘文件的读写。
+行缓冲：在这种情况下，当在输入和输出中遇到换行符时，执行真正的 I/O 操作。这 时，我们输入的字符先存放在缓冲区，等按下回车键换行时才进行实际的 I/O 操作。典 型代表是cin。
+不带缓冲：也就是不进行缓冲，有多少数据就刷新多少。标准错误输出 cerr是典型代 表，这使得出错信息可以直接尽快地显示出来。
+
+cout既有全缓冲的机制，又有行缓冲的机制；cin通常体现行缓冲机制；cerr属于不带缓冲 机制，通常用于处理错误信息。
+
+#### 标准输出流
+
+ostream 类定义了全局输出流对象 cout，即标准输出，在缓冲区刷新时将数据输出到终端。
+
+如下几种情况会导致输出缓冲区内容被刷新：
+
+1. 程序正常结束
+   ~~~c++
+   for(int i =0;i<1025;++i){
+       cout<<'a';
+   }
+   ~~~
+
+   1025个a会直接输出到屏幕上。
+
+2. 缓冲区满
+   ~~~c++
+   for(int i =0;i<1025;++i){
+       cout<<'a';
+   }
+   sleep(2);
+   ~~~
+
+   1024个a会输出到屏幕上，等过两秒后会输出第1025个a。因为缓冲区大小为1024个字节，当缓冲区满时直接输出，第1025个a就要等程序结束了再输出。
+
+3. 使用操纵符显示地刷新缓冲区，如endl;
+   ~~~c++
+   for(int i =0;i<5;++i){
+       cout<<'a';
+   }
+   sleep(2);
+   ~~~
+
+   过2秒后才输出5个a
+
+   ~~~c++
+   for(int i =0;i<5;++i){
+       cout<<'a'<<endl;
+   }
+   sleep(2);
+   ~~~
+
+   直接输出5个a因为endl会刷新缓冲区。
+
+关于操作符
+
+endl : 用来完成换行，并刷新缓冲区
+ends : 在输入后加上一个空字符('\0')，然后再刷新缓冲区
+flush : 用来直接刷新缓冲区的 标准错误流，cout.flush();
+
+#### 标准错误流
+
+~~~c++
+void test1(){
+    cerr<<1;
+    cout<<3;
+    sleep(2);
+}
+~~~
+
+标准错误流没有缓冲区，1会直接输出3会过两秒才输出。
+
+### 文件输入输出流
+
+文件输入流是从外存文件流向内存的数据，文件输出流是从内存流向外存文件的数据。每 一个文件流都有一个内存缓冲区与之对应。文件流本身不是文件，而只是以文件为输入输 出对象的流。若要对磁盘文件输入输出，就必须通过文件流来实现。
+
+C++ 对文件进行操作的流类型有三个: 
+`ifstream`（文件输入流）
+`ofstream`（文件输出流）
+`fstream` （文件输入输出流）
+
+他们的构造函数形式如下：
+![image-20250416150726122](./c++.assets/image-20250416150726122.png)
+
+补充：explicit关键字表示禁止隐式转换。
+
+#### 文件输入流
+
+我们可以将输入流对象的创建分为两类：
+
+1. 可以使用无参构造创建ifstream对象，再使用open函数将这个文件输入流对象与文件绑 定（若文件不存在，则文件输入流进入failbit状态）；
+   ~~~c++
+   ifstream ifs;
+   ifs.open("test.txt");
+   ~~~
+
+2. 也可以使用有参构造创建ifstream对象，在创建时就将流对象与文件绑定，后续操作这 个流对象就可以对文件进行相应操作。
+   ~~~c++
+   ifstream ifs = ifstream("text.txt");
+   ~~~
+
+   ~~~c++
+   string filename = "text.txt";
+   ifstream ifs = ifstream(filename);
+   ~~~
+
+默认以读的方式打开（`in`）
+
+**文件模式**
+
+in : 输入，文件将允许做读操作；如果文件不存在，打开失败
+out : 输出，文件将允许做写操作；如果文件不存在，则直接创建一个
+app : 追加，写入将始终发生在文件的末尾
+ate : 末尾，写入最初在文件的末尾
+trunc : 截断，如果打开的文件存在，其内容将被丢弃，其大小被截断为零
+binary : 二进制，读取或写入文件的数据为二进制形式
+
+#### 按行读取
+
+方式一：使用ifstream类中的成员函数getline，这种方式是兼容C的写法
+
+~~~c++
+ifstream ifs = ifstream("test.txt");
+char buf[1024] = {0};
+while(ifs.getline(buf,sizeof(buf))){
+    cout<<buf<<endl;
+    memset(buf,0,sizeof(buf));
+}
+~~~
+
+准备好一片空间存放一行的内容，但是有一个弊端就是我们并不知道一行的内容会有多少个字符，如果超过了设置的字符长度将无法完成该行的读取，也将跳出循环。
+
+方式二（更常用）：使用`<string>`中的`getline()`方法
+~~~c++
+ifstream ifs = ifstream("test.txt");
+string line;
+while(getline(ifs,line)){
+    cout<<line<<endl;
+}
+~~~
+
+将一行的内容交给一个string对象去存储，不用再关心字符数了。
+
+#### 读取指定字节数的内容
+
+使用`read()`、`seekg()`、`tellg()`函数
+
+~~~c++
+read(char* buffer, streamsize n)//从输入流中读取n个字节的数据，放入指定的内存 buffer中。
+~~~
+
+~~~c++
+//设置读取位置（get position）——即输入流的“光标”移动到某个位置。
+seekg(pos)//设置绝对位置
+seekg(offset,dir);//设置相对位置
+//例如：
+fin.seekg(0);  // 移动到文件开头
+fin.seekg(0, ios::beg);  // 同上
+fin.seekg(10, ios::cur); // 当前基础上向后移动10字节
+fin.seekg(-5, ios::end); // 移动到文件末尾倒数第5字节
+~~~
+
+~~~c++
+tellg()//获取当前输入流的读取位置。
+streampos pos = fin.tellg();
+cout << "当前位置: " << pos << endl;
+~~~
+
+#### 文件输出流
+
+与文件输入流类似，文件输出流对象的创建也有两种方式：
+
+~~~c++
+ofstream ofs;
+ofs = ofstream("test.txt");
+~~~
+
+~~~c++
+ofstream ofs = ofstream("test.txt");
+//或
+string filename = "test.txt";
+ifstream ofs = ofstream(filename);
+~~~
+
+通过输入流运算符写入内容
+
+~~~c++
+ofstream ofs = ofstream("test.txt",std::ios::app);//追加方式写入
+string line = "nihao";
+ofs<<line;
+ofs.close();
+~~~
+
+## 日志系统
+
+### log4cpp的安装
+
+下载地址：https://sourceforge.net/projects/log4cpp/files/
+
+安装步骤
+
+~~~sh
+tar xzvf log4cpp-1.1.4rc3.tar.gz
+
+cd log4cpp
+
+./configure #进行自动化构建，自动生成makefile
+
+make
+
+sudo make install #安装把头文件和库文件拷贝到系统路径下
+
+# 安装完后
+# 默认头文件路径：/usr/local/include/log4cpp
+# 默认lib库路径：/usr/local/lib
+~~~
+
+拷贝如下内容并编译运行。
+
+~~~c++
+// log4cppTest.cc
+
+#include "log4cpp/Category.hh"
+#include "log4cpp/Appender.hh"
+#include "log4cpp/FileAppender.hh"
+#include "log4cpp/OstreamAppender.hh"
+#include "log4cpp/Layout.hh"
+#include "log4cpp/BasicLayout.hh"
+#include "log4cpp/Priority.hh"
+
+int main(int argc, char** argv) {
+	log4cpp::Appender *appender1 = new log4cpp::OstreamAppender("console", &std::cout);
+	appender1->setLayout(new log4cpp::BasicLayout());
+
+	log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", "program.log");
+	appender2->setLayout(new log4cpp::BasicLayout());
+
+	log4cpp::Category& root = log4cpp::Category::getRoot();
+	root.setPriority(log4cpp::Priority::WARN);
+	root.addAppender(appender1);
+
+	log4cpp::Category& sub1 = log4cpp::Category::getInstance(std::string("sub1"));
+	sub1.addAppender(appender2);
+
+	// use of functions for logging messages
+	root.error("root error");
+	root.info("root info");
+	sub1.error("sub1 error");
+	sub1.warn("sub1 warn");
+
+	// printf-style for logging variables
+	root.warn("%d + %d == %s ?", 1, 1, "two");
+
+	// use of streams for logging messages
+	root << log4cpp::Priority::ERROR << "Streamed root error";
+	root << log4cpp::Priority::INFO << "Streamed root info";
+	sub1 << log4cpp::Priority::ERROR << "Streamed sub1 error";
+	sub1 << log4cpp::Priority::WARN << "Streamed sub1 warn";
+
+	// or this way:
+	root.errorStream() << "Another streamed error";
+
+	return 0;
+}
+~~~
+
+可能报错：找不到动态库
+
+~~~sh
+# 解决方法
+cd /etc
+sudo vim ld.so.conf
+#将/usr/local/lib添加到文件中
+sudo ldconfig
 ~~~
 
