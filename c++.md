@@ -1858,3 +1858,850 @@ sudo vim ld.so.conf
 sudo ldconfig
 ~~~
 
+## 运算符重载
+
+### 友元
+
+一般来说，类的私有成员只能在类的内部访问，类之外是不能访问它们的。但如果将其他类/函数设置为类的友元，那么友元类/函数就可以在前一个类的类定义之外访问其私有成 员了。 **用friend关键字声明友元**。
+
+#### 友元之普通函数形式
+
+将distance函数声明为Point类的友 元函数，之后就可以在distance函数中访问Point的私有成员了。
+
+~~~c++
+class Point{
+public:
+    Point(int x,int y)
+    :_ix(x)
+    ,_iy(y){}
+    friend 
+    float distance(const Point & lhs,const Point & rhs);
+private:
+    int _ix;
+    int _iy;
+};
+float distance(const Point & lhs,const Point & rhs){
+    return sqrt((lhs._ix- rhs._ix)*(lhs._ix- rhs._ix) + (lhs._iy- rhs._iy)*(lhs._iy- rhs._iy));
+}
+int main(){
+    Point pt1(1,2);
+    Point pt2(2,3);
+    cout<<distance(pt1,pt2)<<endl;
+    return 0;
+}
+~~~
+
+#### 友元函数之成员函数
+
+~~~c++
+class Point;//前向声明
+class Line{
+public:
+    //友元的成员函数形式
+    float distance(const Point & lhs,const Point & rhs);
+};
+class Point{
+public:
+    Point(int x,int y)
+    :_ix(x)
+    ,_iy(y){}
+    friend float Line::distance(const Point & lhs,const Point & rhs);
+private:
+    int _ix;
+    int _iy;
+};
+
+float Line::distance(const Point & lhs,const Point & rhs){
+    return sqrt(pow((lhs._ix- rhs._ix),2) + pow((lhs._iy- rhs._iy),2));
+}
+int main(){
+    Point pt1(1,2);
+    Point pt2(2,3);
+    Line line;
+    cout<<line.distance(pt1,pt2)<<endl;
+    return 0;
+}
+~~~
+
+前向声明的用处：进行了前向声明的类，可以以引用或指针的形式作为函数的参数，只要 不涉及到对该类对象具体成员的访问，编译器可以通过。
+
+**友元的声明要注意和函数的形式完全对应上。**
+
+#### 友元类
+
+可以直接将 Line 类设置为 Point 的友元类，在工作中这也是更常见的方法。在Point类中声明Line类是本类的友元类，那么Line类中的所有成员函数中都可以访问Point 类的私有成员。一次声明，全部解决。
+
+~~~c++
+class Point;
+class Line{
+public:
+    float distance(const Point & lhs,const Point & rhs);
+};
+class Point{
+public:
+    Point(int x,int y)
+    :_ix(x)
+    ,_iy(y){}
+    friend class Line;//直接声明友元类，友元类中的成员函数可以任意访问私有成员
+private:
+    int _ix;
+    int _iy;
+};
+
+float Line::distance(const Point & lhs,const Point & rhs){
+    return sqrt(pow((lhs._ix- rhs._ix),2) + pow((lhs._iy- rhs._iy),2));
+}
+int main(){
+    Point pt1(1,2);
+    Point pt2(2,3);
+    Line line;
+    cout<<line.distance(pt1,pt2)<<endl;
+    return 0;
+}
+~~~
+
+#### 友元的特点
+
+1. **友元不受类中访问权限的限制**——可访问私有成员
+2. **友元破坏了类的封装性**
+3. **不能滥用友元 ，友元的使用受到限制**
+4. **友元是单向的**，A类是B类的友元类，则A类成员函数中可以访问B类私有成员；但并不代表B类是A类的友元类，如果A类中没有声明B类为友元类，此时B类的成员函数中并 不能访问A类私有成员。
+5. **友元不具备传递性**——A是B的友元类，B是C的友元类，无法推断出A是C的友元类
+6. **友元不能被继承**——因为友元破坏了类的封装性，为了降低影响，设计层面上友元不能 被继
+
+### 运算符重载
+
+C++ 预定义中的运算符的操作对象只局限于基本的内置数据类型，但是对于自定义的类型 是没有办法操作的。当然我们可以定义一些函数来实现这些操作，但考虑到用运算符表达 含义的方式很简洁易懂，当定义了自定义类型时，也希望这些运算符能被自定义类类型使 用，以此提高开发效率，增加代码的可复用性。为了实现这个需求，C++提供了运算符重 载。其指导思想是： **希望自定义类类型在操作时与内置类型保持一致。**
+
+有如下字符能够被重载：
+
+![image-20250417092206713](./c++.assets/image-20250417092206713.png)
+
+不能重载的运算符包括：
+
+![image-20250417092247811](./c++.assets/image-20250417092247811.png)
+
+#### 运算符重载的规则和形式*
+
+**运算符的重载有以下规则：**
+
+1. 运算符重载时 ，**其操作数类型必须要是自定义类类型或枚举类型** ——不能是内置类型
+2. 其优先级和结合性还是固定不变的
+3. **操作符的操作数个数是保持不变的**
+4. **运算符重载时 ，不能设置默认参数**     ——如果设置了默认值，其实也就是改变了操作数的个数
+5. 逻辑与 && 逻辑或 || 就不再具备短路求值特性 ，进入函数体之前必须完成所有函数参 数的计算, 不推荐重载
+6.   不能臆造一个并不存在的运算符         @ $ 、
+
+**运算符重载的三种形式：**
+
+1. **采用友元函数的重载形式**
+2. 采用普通函数的重载形式
+3. **采用成员函数的重载形式**
+
+以加法运算符为例，认识这三种形式：
+
+需求：实现一个复数类，复数分为实部和虚部，重载+运算符，使其能够处理两个复数之间 的加法运算（实部加实部，虚部加虚部）
+
+> 友元函数实现重载：
+
+~~~c++
+class Complex{
+public:
+    Complex(int _real,int _image):_real(_real),_image(_image){};
+    friend Complex operator+(const Complex & lhs,const Complex & rhs);
+    void print();
+private:
+    int _real;
+    int _image;
+};
+void Complex::print(){
+    cout<<_real<<" "<<_image<<endl;
+}
+Complex operator+(const Complex & lhs,const Complex & rhs){
+    return Complex(lhs._real + rhs._real,lhs._image + rhs._image);
+}
+int main(){
+    Complex cx1(1,-2);
+    Complex cx2(3,4);
+    Complex cx3 = cx1 + cx2;
+    cx3.print();
+    return 0;
+}
+/*
+步骤：
+1. 先确定这个函数的返回值是什么类型（加法运算返回值应该是一个临时的Complex对象，所以此处返回类型为Complex）
+2. 再写上函数名（operator + 运算符，此处就是operator+）
+3. 再补充参数列表（考虑这个运算符有几个操作数，此处加法运算应该有两个操作数，分别是两个Complex对象，因为加法操作不改变操作数的值，可以用const引用作为形参）
+4. 最后完成函数体的内容（此处直接调用Complex构造函数创建一个新的对象作为返回值）。
+——在定义的operator+函数中需要访问Complex类的私有成员，要进行友元声明
+*/
+~~~
+
+**像加号这一类不会修改操作数的值的运算符，倾向于采用友元函数的方式重载。**
+
+> 普通函数实现重载（不推荐）：
+
+~~~c++
+class Complex{
+public:
+    Complex(int _real,int _image):_real(_real),_image(_image){};
+    int getReal() const;
+    int getImage() const;
+    void print();
+private:
+    int _real;
+    int _image;
+};
+void Complex::print(){
+    cout<<_real<<" "<<_image<<endl;
+}
+int Complex::getReal() const{
+    return _real;
+}
+int Complex::getImage() const{
+    return _image;
+}
+Complex operator+(const Complex & lhs,const Complex & rhs){
+    return Complex(lhs.getReal() + rhs.getReal(),lhs.getImage() + rhs.getImage());
+}
+int main(){
+    Complex cx1(1,-2);
+    Complex cx2(3,4);
+    Complex cx3 = cx1 + cx2;
+    cx3.print();
+    return 0;
+}
+~~~
+
+> 成员函实现重载
+
+~~~c++
+class Complex{
+public:
+    Complex(int _real,int _image):_real(_real),_image(_image){};
+    Complex operator+(const Complex & rhs){
+        return Complex(_real + rhs._real,_image+ rhs._image);
+    }
+    void print();
+private:
+    int _real;
+    int _image;
+};
+void Complex::print(){
+    cout<<_real<<" "<<_image<<endl;
+}
+
+int main(){
+    Complex cx1(1,-2);
+    Complex cx2(3,4);
+    Complex cx3 = cx1 + cx2;//起本质为cx1.operator+(cx2)
+    cx3.print();
+    return 0;
+}
+~~~
+
+这种写法要注意的是，加法运算符的左操作数实际上就是this指针所指向的对象，在参数列表中只需要写上右操作数
+
+#### +=运算符重载
+
+**像+= 这一类会修改操作数的值的运算符，倾向于采用成员函数的方式重载。**
+
+~~~c++
+class Complex{
+public:
+    Complex(int _real,int _image):_real(_real),_image(_image){};
+    Complex operator+=(const Complex & rhs){
+        _real += rhs._real;
+        _image += rhs._image;
+        return *this;
+    }
+    void print();
+private:
+    int _real;
+    int _image;
+};
+void Complex::print(){
+    cout<<_real<<" "<<_image<<endl;
+}
+
+int main(){
+    Complex cx1(1,-2);
+    Complex cx2(3,4);
+    Complex cx3 = cx1 += cx2;//起本质为cx1.operator+(cx2)
+    cx3.print();
+    return 0;
+}
+~~~
+
+#### 重载形式的选择
+
+- 不会修改操作数的值的运算符，倾向于采用友元函数的方式重载
+- 会修改操作数的值的运算符，倾向于采用成员函数的方式重载
+- **赋值= 、下标 [  ] 、调用 () 、成员访问-> 、成员指针访问->* 运算符必须是成员函数形 式重载**
+- 与给定类型密切相关的运算符，如递增、递减和解引用运算符，通常应该是成员函数形式重载
+- 具有对称性的运算符可能转换任意一端的运算对象，例如相等性、位运算符等，通常应该是友元形式重载
+
+#### ++运算符重载
+
+++运算符有前置和后置两种形式，产生的效果也不同，所以需要在设计层面加以区分。
+
+~~~c++
+class Complex{
+public:
+    Complex(int _real,int _image):_real(_real),_image(_image){};
+    Complex operator+=(const Complex & rhs){
+        _real += rhs._real;
+        _image += rhs._image;
+        return *this;
+    }
+    Complex operator+(const Complex & rhs){
+        return Complex(_real + rhs._real,_image+ rhs._image);
+    }
+    Complex & operator++(){//前置++
+        ++_real;
+        ++_image;
+        return *this;
+    }
+    Complex operator++(int){//后置++运算符重载函数的参数列表加入一个int与前置++做区分，返回值类型为对象而不是引用
+        Complex temp(*this);
+        ++_real;
+        ++_image;
+        return temp;
+    }
+    void print();
+private:
+    int _real;
+    int _image;
+};
+void Complex::print(){
+    cout<<_real<<" "<<_image<<endl;
+}
+
+int main(){
+    Complex cx1(1,-2);
+    (++cx1).print();
+    cx1++.print();
+    return 0;
+}
+~~~
+
+#### []运算符重载
+
+需求：定义一个CharArray类，模拟char数组，需要通过下标访问运算符能够对对应下标位 置字符进行访问。
+
+- 分析[ ]运算符重载函数的返回类型，因为通过下标取出字符后可能进行写操作，需要改变CharArray对象的内容，所以应该用char引用；
+- [ ]运算符的操作数有两个，一个是CharArray对象，一个是下标数据，ch[0]的本质是ch.operator[] (0)
+
+函数体实现需要考虑下标访问越界情况，若未越界则返回对应下标位置的字符，若越界返回终止符。
+
+~~~c++
+class CharArray{
+public:
+    CharArray(const char * pstr)
+    : _capacity(strlen(pstr) + 1)
+    , _data(new char[_capacity]())
+    {
+        strcpy(_data,pstr);
+    }
+    ~CharArray(){
+        if(_data){
+        delete [] _data;
+        _data = nullptr;
+        }
+    }
+    char & operator[](size_t idx){
+        if(idx < _capacity-1){
+            return _data[idx];
+        }else{
+            cout<<"out of range"<<endl;
+            static char nullchar = '\0';
+            return nullchar;
+        }
+    }
+    /*
+    采用这种方式可以禁止CharArray地域性通过下标访问修改字符数组的元素
+    const char & operator[](size_t idx) const{
+        if(idx < _capacity-1){
+            return _data[idx];
+        }else{
+            cout<<"out of range"<<endl;
+            static char nullchar = '\0';
+            return nullchar;
+        }
+    }
+    */
+    void print() const{
+        cout<<_data<<endl;
+    }
+private:
+    size_t _capacity;
+    char * _data;
+};
+int main(){
+    char array[10] = "hello";
+    CharArray carray(array);
+    carray[3] = 'p';
+    carray.print();
+    return 0;
+}
+~~~
+
+#### <<运算符重载
+
+- 输出流运算符有两个操作数，左操作数是输出流对象，右操作数是Complex对象。如果将输出流运算符函数写成Complex的成员函数，会带来一个问题，成员函数的第一个参数必然是this指针，也就是说Complex对象必须要作为左操作数。这种方式完成重载函 数后，只能cx << cout这样来使用，与内置类型的使用方法不同，所以**输出流运算符的重载必须采用友元形式**。
+- cout << cx这个语句的返回值是cout对象，因为cout是全局对象，不允许复制，所以返回类型为ostream &；
+- 参数列表中第一个是左操作数（cout对象），写出类型并给出形参名；第二个是右操作数（Complex对象），因为不会在输出流函数中修改它的值，采用const引用；
+- 将Complex的信息通过连续输出语句全部输出给os，最终返回os（注意，使用cout输出流时通常会带上endl，那么在函数定义中就不加endl，以免多余换行）
+
+~~~c++
+class Point{
+public:
+    Point(int _ix,int _iy):_ix(_ix),_iy(_iy){};
+    friend ostream & operator<<(ostream & os,const Point & rhs);
+private:
+    int _ix;
+    int _iy;
+};
+ostream & operator<<(ostream & os,const Point & rhs){
+    os<<"("<<rhs._ix<<","<<rhs._iy<<")";
+    return os;
+}
+int main(){
+    Point pt(1,2);
+    cout<<pt<<endl;//其本质为operator<<(cout,pt)
+    return 0;
+}
+~~~
+
+#### \>\>运算符重载
+
+~~~c++
+void readInputInt(istream & is,int & number){//判断输入是否合法
+    cout<<"please input a int number:"<<endl;
+    //等价于
+    //is>>number;
+    //while(!is.eof())
+    while(is>>number,!is.eof()){
+        if(is.bad()){
+            cout<<"istream is broken"<<endl;
+            return;
+        }else if(is.fail()){
+            is.clear();
+            is.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+            cout<<"please input a int number"<<endl;
+        }else{
+            break;
+        }
+    }
+}
+class Point{
+public:
+    Point(){};
+    Point(int _ix,int _iy):_ix(_ix),_iy(_iy){};
+    friend
+    ostream & operator<<(ostream & os,const Point & rhs);
+    friend
+    istream & operator>>(istream & is,Point & rhs);
+private:
+    int _ix;
+    int _iy;
+};
+ostream & operator<<(ostream & os,const Point & rhs){
+    os<<"("<<rhs._ix<<","<<rhs._iy<<")";
+    return os;
+}
+istream & operator>>(istream & is,Point & rhs){
+    // is>>rhs._ix;
+    // is>>rhs._iy;
+    readInputInt(is,rhs._ix);
+    readInputInt(is,rhs._iy);
+    return is;
+}
+int main(){
+    Point pt;
+    cin>>pt;
+    cout<<pt<<endl;//其本质为operator<<(cout,pt)
+    
+    return 0;
+}
+~~~
+
+#### ->和*运算符的重载
+
+建立一个双层的结构，MiddleLayer含有一个Data*型的数据成员。需求：希望实现一个这样的效果，创建MiddleLayer对象midl，让midl对象可以使用箭头运算符去调用Data类的成员函数getData
+
+- 箭头运算符无法应对MiddleLayer对象，那么可以定义箭头运算符重载函数。
+- 然后考虑返回类型，返回值需要使用箭头运算符调用getData函数，而原生的用法只有 Data* 才能这么用，所以返回值应该是一个Data* ，此时应该直接返回   _pdata；
+- 同时考虑到一个问题：MiddleLayer的数据成员是一个Data*，创建MiddleLayer对象时初始化这个指针，让其指向了堆上的Data对象，那么还应该补充析构函数使 MiddleLayer对象销毁时能够回收这片堆上的资源。
+
+~~~c++
+class Data{
+public:
+    Data(){
+        cout<<"Data()"<<endl;
+    }
+    Data(int x):_data(x){};
+    ~Data(){
+        cout<<"~Data()"<<endl;
+    }
+    int getData() const{
+        return _data;
+    }
+private:
+    int _data;
+};
+class MiddleLayer{
+public:
+    MiddleLayer(Data *p):_pdata(p){
+        cout<<"MiddleLayer(Data*)"<<endl;
+    }
+    ~MiddleLayer(){
+        delete _pdata;
+        _pdata = nullptr;
+        cout<<"~MiddleLayer"<<endl;
+    }
+    Data * operator->(){
+        return _pdata;
+    }
+    Data & operator*(){
+        return *_pdata;
+    }
+private:
+    Data *_pdata;
+};
+int main(){
+    MiddleLayer midl(new Data(3));
+    cout<<midl->getData()<<endl;
+    //cout<<(ml.operator->())->getData()<<endl;
+    cout<<(*midl).geyData()<<endl;
+    //cout<<(ml.operator*())->getData()<<endl;
+    return 0;
+}
+~~~
+
+`midl`本身是一个局部对象，因为重载了箭头运算符，所以看起来像个 指针，也可以像指针一样进行使用，但是这个对象在栈帧结束时会自动销毁，自动调用析 构函数回收了它的数据成员所申请的堆空间
+
+三层结构下使用：
+
+~~~c++
+class Data{
+public:
+    Data(){
+        cout<<"Data()"<<endl;
+    }
+    Data(int x):_data(x){};
+    ~Data(){
+        cout<<"~Data()"<<endl;
+    }
+    int getData() const{
+        return _data;
+    }
+private:
+    int _data;
+};
+class MiddleLayer{
+public:
+    MiddleLayer(Data *p):_pdata(p){
+        cout<<"MiddleLayer(Data*)"<<endl;
+    }
+    ~MiddleLayer(){
+        delete _pdata;
+        _pdata = nullptr;
+        cout<<"~MiddleLayer"<<endl;
+    }
+    Data * operator->(){
+        return _pdata;
+    }
+    Data & operator*(){
+        return *_pdata;
+    }
+private:
+    Data *_pdata;
+};
+class ThirdLayer{
+public:
+    ThirdLayer(MiddleLayer *_pmid):_pmid(_pmid){
+        cout<<"ThirdLayer(Data*)"<<endl;
+    }
+    ~ThirdLayer(){
+        delete _pmid;
+        _pmid = nullptr;
+        cout<<"~ThirdLayerLayer"<<endl;
+    }
+    MiddleLayer & operator->(){
+        return *_pmid;
+    }
+    MiddleLayer & operator*(){
+        return *_pmid;
+    }
+private:
+    MiddleLayer *_pmid;
+};
+int main(){
+    ThirdLayer thirdl(new MiddleLayer(new Data(3)));
+    cout<<thirdl->getData()<<endl;
+    //cout<<((thirdl->operator())->operator())->getData()<<endl;
+    cout<<(*(*thirdl)).getData()<<endl;//解引用运算符不会递归调用
+    return 0;
+}
+~~~
+
+**operator->()会自动连续调用->直到返回指针。**
+
+**operator*只调用一次，需要手动解引用多次。**
+
+### 可调用实体
+
+讲到调用这个词，我们首先能够想到**普通函数**和**函数指针**，在学习了类与对象的基础知识 后，还增加了成员函数，那么它们都被称为可调用实体。事实上，根据其他的一些不同的场景需求，C++还提供了一些可调用实体，它们都是通过运算符重载来实现的。
+
+普通函数执行时，有一个特点就是无记忆性。一个普通函数执行完毕，它所在的函数栈空 间就会被销毁，所以普通函数执行时的状态信息，是无法保存下来的，这就让它无法应用 在那些需要对每次的执行状态信息进行维护的场景。大家知道，我们学习了类与对象以 后，有了对象的存在，对象执行某些操作之后，只要对象没有销毁，其状态就是可以保留 下来的。
+
+#### 函数对象
+
+可以通过对函数调用运算符`()`重载实现对象像函数一样被调用。函数调用运算符必须以成员函数的形式进行重载。
+
+~~~c++
+class FunctionObject{
+public:
+    void operator()(){
+        cout<<"void operator()()"<<endl;
+    }
+};
+int main(){
+    FunctionObject fo;
+    fo();
+    return 0;
+}
+~~~
+
+在定义 "()" 运算符的语句中，第一对小括号总是空的，因为它代表着我们定义的运算符 名称，第二对小括号就是函数参数列表了，它与普通函数的参数列表完全相同。对于其他 能够重载的运算符而言，操作数个数都是固定的，但函数调用运算符不同，它的参数是根 据需要来确定的， 并不固定。
+
+重载了函数调用运算符的类的对象称为函数对象，由于参数列表可以随意扩展 ，所以可以有很多重载形式（对应了普通函数的多种重载形式）。
+
+~~~c++
+class FunctionObject{
+public:
+    void operator()(){
+        cout<<"void operator()()"<<endl;
+        ++count;
+    }
+    int operator()(int x,int y){
+        cout<<"int operator()(int x,int y)"<<endl;
+        ++count;
+        return x+y;
+    }
+    int count = 0;//记录被调用的次数
+};
+int main(){
+    FunctionObject fo;
+    fo();
+    fo(2,3);
+    cout<<fo.count<<endl;
+    return 0;
+}
+~~~
+
+函数对象相比普通函数的优点：可以携带状态（函数对象可以封装自己的数据成员、成员函数，具有更好的面向对象的特性）。 如上，可以记录函数对象被调用的次数，而普通函数只能通过全局变量做到（全局变量不 够安全）
+
+#### 成员函数指针
+
+**成员函数指针** 是一种指向类成员函数的特殊指针，语法上比普通函数指针复杂一点。成员函数属于类，不属于全局作用域，因此它的指针 **不能直接调用**，必须依赖对象（或对象指针）来使用。
+
+~~~c++
+//声明格式
+返回类型 (类名::*指针变量名)(参数列表);
+~~~
+
+~~~c++
+class MyClass {
+public:
+    void display(int x) {
+        std::cout << "x = " << x << std::endl;
+    }
+};
+int main(){
+    void (MyClass::*funcPtr)(int);  //声明一个指向MyClass类的成员函数指针
+    funcPtr = &MyClass::display;    //赋值
+    return 0;
+}
+~~~
+
+必须通过对象或对象指针来调用它：
+
+~~~c++
+MyClass obj;
+(obj.*funcPtr)(20);//调用函数
+MyClass *pobj;
+(pobj->*funcPtr)(100);
+~~~
+
+成员函数指针的意义：
+
+1. 回调函数：**将成员函数指针作为参数传递给其他函数**，使其他函数能够在特定条件下调 用该成员函数；
+2. 事件处理：将成员函数指针存储事件处理程序中，以便在特定事件发生时调用相应的成员函数；
+3. 多态性：通过将成员函数指针存储在基类指针中，可以实现多态性，在运行时能够去调用相应的成员函数。
+
+#### 空指针的使用
+
+~~~c++
+class Bar{
+public:
+    void test0(){ cout << "Bar::test0()" << endl; }
+    void test1(int x){ cout << "Bar::test1(): " << x << endl; }
+    void test2(){ cout << "Bar::test2(): " << _data << endl; }
+    int _data = 10;
+};
+void test0(){
+    Bar * fp = nullptr;
+    fp->test0();
+    fp->test1(3);
+    fp->test2(); //error
+}
+~~~
+
+![image-20250417163709985](./c++.assets/image-20250417163709985.png)
+
+空指针没有指向有效的对象。对于不涉及数据成员的成员函数，不需要实际的对象上下 文，因此就算是空指针也可以调用成功。对于涉及数据成员的成员函数，空指针无法提供 有效的对象上下文，因此导致错误。
+
+**C++ 中普通函数、函数指针、成员函数、成员函数指针、函数对象，可以将它们概括为可调用实体。**
+
+### 类型转换函数
+
+由其他类型向定义类型转换是由构造函数来实现的，只有当类中定义了合适的构造函数 时，转换才能通过。这种转换，一般称为隐式转换。
+
+之前我们见识了隐式转换，当时的例子中能够进行隐式转换的前提是Point类中有相应的构 造函数，编译器会看用一个int型数据能否创建出一个Point对象，如果可以，就创建出一个 临时对象，并将它的值复制给pt 。
+
+~~~c++
+Point pt = 1;//等价于Point pt = Point(1);
+~~~
+
+这种隐式转换是比较奇怪的，一般情况下，不希望这种转换成立，所以可以在相应的构造 函数之前加上`explicit`关键字，禁止这种隐式转换。
+
+> 由自定义类型向其他类型转换——类型转换函数
+
+类型转换函数的形式是固定的：`operator 目标类型(){ }`
+
+它有着如下的特征：
+
+1. 必须是成员函数
+2. 没有返回值类型
+3. 没有参数
+4. 在函数执行体中必须要返回目标类型的变量
+
+**自定义类型向内置类型转换**
+
+~~~c++
+class Point{
+public:
+    Point(int _ix,int _iy):_ix(_ix),_iy(_iy){
+
+    }
+    operator int(){
+        cout << "operator int()" << endl;
+        return _ix + _iy;
+    }
+private:
+    int _ix;
+    int _iy;
+};
+int main(){
+    Point pt(1,2);
+    int a = 10;
+    a = pt;
+    //其本质时 int a = pt.operator int();
+    cout<<a<<endl;
+    return 0;
+}
+~~~
+
+**自定义类型向自定义类型转换**
+
+~~~c++
+class Point{
+public:
+    Point(int _ix,int _iy):_ix(_ix),_iy(_iy){}
+    operator int(){
+        cout << "operator int()" << endl;
+        return _ix + _iy;
+    }
+    friend ostream & operator<<(ostream & os,const Point &rhs);
+private:
+    int _ix;
+    int _iy;
+};
+ostream & operator<<(ostream & os,const Point &rhs){
+    os<<"("<<rhs._ix<<","<<rhs._iy<<")";
+    return os;
+}
+class Complex{
+public:
+    Complex(int real,int image):real(real),image(image){}
+    operator Point(){
+        cout<<"operator Point()"<<endl;
+        return Point(real,image);
+    }
+    friend ostream & operator<<(ostream & os,const Complex &rhs);
+private:
+    int real;
+    int image;
+};
+ostream & operator<<(ostream & os,const Complex &rhs){
+    os<<rhs.real<<" "<<rhs.image;
+    return os;
+}
+int main(){
+    Complex cx(1,2);
+    Point pt = cx;
+    cout<<pt<<endl;
+    return 0;
+}
+~~~
+
+### 嵌套类
+
+#### 类作用域和类名作用域
+
+**类作用域**
+类作用域是指在类定义内部的范围。在这个作用域内定义的成员（包括变量、函数、类型 别名等）可以被该类的所有成员函数访问。类作用域开始于类定义的左花括号，结束于类 定义的右花括号。在类作用域内，成员可以相互访问，无论它们在类定义中的声明顺序如何。
+
+**类名作用域**
+类名作用域指的是可以通过类名访问的作用域。这主要用于访问类的静态成员、嵌套类 型。类名必须用于访问静态成员或嵌套类型，除非在类的成员函数内部，因为它们不依赖 于类的任何特定对象。
+
+~~~c++
+class Line{
+public:
+    class Point{
+    public:
+        Point(int x,int y):x(x),y(y){}
+        friend ostream & operator<<(ostream & os,const Point & rhs){
+            os<<"("<<rhs.x<<","<<rhs.y<<")";
+            return os;
+        }
+    private:
+        int x;
+        int y;
+    };
+public:
+    Line(int x1,int y1,int x2,int y2):pt1(x1,y1),pt2(x2,y2){}
+private:
+    Point pt1;
+    Point pt2;
+    int num = 0;
+};
+
+int main(){
+    Line::Point pt(1,3);
+    cout<<pt<<endl;
+    return 0;
+}
+~~~
+
+#### 嵌套类的访问权限
+
+| 谁访问谁？       | 默认权限           | 提升权限方法           |
+| ---------------- | ------------------ | ---------------------- |
+| 嵌套类访问外部类 | 不能访问私有和保护 | 外部类声明嵌套类为友元 |
+| 外部类访问嵌套类 | 不能访问私有和保护 | 外部类设为私有类的友元 |
+
+### 单例对象自动释放
+
