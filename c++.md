@@ -1308,11 +1308,6 @@ private:
         _ix = x;
         _iy = y;
     }
-    Point(const Point &rhs)
-    :_ix(rhs._ix)
-    ,_iy(rhs._iy){
-        cout<<"call copy function"<<endl;
-    }
     int _ix=0;
     int _iy=0;
 };
@@ -1777,6 +1772,15 @@ ofs.close();
 
 ## 日志系统
 
+### 日志系统的设计
+
+日志系统的设计，一般而言要抓住最核心的一条，就是**日志从产生到到达最终目的地期间的处理流程**。一般而言，为了设计一个灵活可扩展，可配置的日志库，主要将日志库分为4 个部分去设计，分别是：记录器、过滤器、格式化器、输出器四部分。
+
+**记录器（日志来源）**：负责产生日志记录的原始信息，比如（原始信息，日志优先级，时间，记录的位置）等等信息。
+**过滤器（日志系统优先级）**：负责按指定的过滤条件过滤掉我们不需要的日志。
+**格式化器（日志布局）**：负责对原始日志信息按照我们想要的格式去格式化。
+**输出器（日志目的地）**：负责将将要进行记录的日志（一般经过过滤器及格式化器的处理后）记录到日志目的地（例如：输出到文件中）。
+
 ### log4cpp的安装
 
 下载地址：https://sourceforge.net/projects/log4cpp/files/
@@ -1813,22 +1817,23 @@ sudo make install #安装把头文件和库文件拷贝到系统路径下
 #include "log4cpp/Priority.hh"
 
 int main(int argc, char** argv) {
+    //创建日志输出器输出到控制台
 	log4cpp::Appender *appender1 = new log4cpp::OstreamAppender("console", &std::cout);
 	appender1->setLayout(new log4cpp::BasicLayout());
-
+	//创建日志输出器输出到文件
 	log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", "program.log");
 	appender2->setLayout(new log4cpp::BasicLayout());
 
-	log4cpp::Category& root = log4cpp::Category::getRoot();
-	root.setPriority(log4cpp::Priority::WARN);
-	root.addAppender(appender1);
+	log4cpp::Category& root = log4cpp::Category::getRoot();//获取根日志器
+	root.setPriority(log4cpp::Priority::WARN);//设置日志等级为WARN，即只显示警告、错误、致命的日志
+	root.addAppender(appender1);//绑定appender1，输出到控制台
 
-	log4cpp::Category& sub1 = log4cpp::Category::getInstance(std::string("sub1"));
-	sub1.addAppender(appender2);
+	log4cpp::Category& sub1 = log4cpp::Category::getInstance(std::string("sub1"));//获取sub1日志器
+	sub1.addAppender(appender2);//绑定appender2，输出到文件
 
 	// use of functions for logging messages
 	root.error("root error");
-	root.info("root info");
+	root.info("root info");//不会显示
 	sub1.error("sub1 error");
 	sub1.warn("sub1 warn");
 
@@ -1837,7 +1842,7 @@ int main(int argc, char** argv) {
 
 	// use of streams for logging messages
 	root << log4cpp::Priority::ERROR << "Streamed root error";
-	root << log4cpp::Priority::INFO << "Streamed root info";
+	root << log4cpp::Priority::INFO << "Streamed root info";//不会显示
 	sub1 << log4cpp::Priority::ERROR << "Streamed sub1 error";
 	sub1 << log4cpp::Priority::WARN << "Streamed sub1 warn";
 
@@ -1857,6 +1862,99 @@ sudo vim ld.so.conf
 #将/usr/local/lib添加到文件中
 sudo ldconfig
 ~~~
+
+运行实例代码：
+
+![image-20250418165823588](./c++.assets/image-20250418165823588.png)
+
+### log4cpp核心组件
+
+#### 目的地日志（Appender）
+
+我们关注这三个目的地类，点开后查看它们的构造函数
+
+- **OstreamAppender：c++通用输出流**
+- **FileAppender：写入本地文件中**
+- **RollingFileAppender：写到回卷文件中**
+
+OstreamAppender的构造函数传入两个参数：目的地名、输出流指针。
+
+~~~c++
+//构造函数形式：
+log4cpp::OstreamAppender::OstreamAppender(const std::string &name,std::ostream *stream) 
+//使用
+log4cpp::Appender *appender1 = new log4cpp::OstreamAppender("console", &std::cout)
+~~~
+
+FileAppender的构造函数传入两个参数：目的地名、保存日志的文件名（后面两个参数使用默认值即可，分别表示以结尾附加的方式的保存日志，当前用户读写-其他用户只读）。
+
+~~~c++
+//构造函数形式：
+log4cpp::FileAppender::FileAppender(const std::string &name,const std::string &fileName,bool append=true,mode_t mode=00644) 
+//使用
+log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", "program.log")
+~~~
+
+RollingFileAppender稍复杂一些，如果没有回卷文件，将所有的日志信息都保存在一个文件中，那么随着系统的运行，产生越来越多的日志，本地日志文件会越变越大，若不加限制，则会大量占用存储空间。所以通常的做法是使用回卷文件，比如只给日志文件 1G的空间，对于这1G的空间可以再次进行划分，比如使用10个文件存储日志信息，每 一个文件最多100M.
+
+~~~c++
+//构造函数形式：
+log4cpp::RollingFileAppender::RollingFileAppender(const std::string &name,const std::string &fileName,size_t maxFileSize = 10 *1024 *1024,unsigned int maxBackupIndex = 1,bool append = true,mode_t mode = 00644) 
+~~~
+
+RollingFileAppender构造函数的参数如上图，其中要注意的是回卷文件个数，如果这一位传入的参数是9，那么实际上会有10个文件保存日志。 回卷的机制是：先生成一个wd.log文件，该文件存满后接着写入日志，那么wd.log文件改名为wd.log.1，然后再创建一个wd.log文件，将日志内容写入其中，wd.log文件存满后 接着写入日志，wd.log.1文件改名为wd.log.2，wd.log改名为wd.log.1，再创建一个 wd.log文件，将最新的日志内容写入。以此类推，直到wd.log和wd.log.1、 wd.log.2、... wd.log.9全都存满后再写入日志，wd.log.9（其中实际上保存着最早的日志内容）会被舍弃，编号在前的回卷文件一一进行改名，再创建新的wd.log文件保存最新的日志信息。
+
+#### 日志布局（Layout）
+
+示例代码中使用的是BasicLayout，也就是默认的日志布局，这样一条日志最开始的信息就是日志产生时距离1970.1.1的秒数，不方便观察。可以使用PatternLayout对象来定制化格式。
+
+使用new语句创建日志布局对象，通过指针调用setConversionPattern函数来设置日志布局
+~~~c++
+PatternLayout * ptn1 = new PatternLayout();
+ptn1->setConversionPattern("%d %c [%p] %m%n");
+/*
+setConversionPattern函数接收一个string作为参数，格式化字符的意义如下： 
+	%d   %c   [%p]  %m      %n 
+	时间 模块名 优先级 消息本身 换行符
+*/
+~~~
+
+**当日志系统有多个日志目的地时，每一个目的地Appender都需要设置一个布局Layout （一对一关系）**
+
+#### 日志记录器（Category）
+
+创建Category对象时，可以用getRoot先创建root模块对象，对root模块对象设置优先级和目的地； 再用getInstance创建叶模块对象，叶模块对象会继承root模块对象的优先级和目的地，可以再去修改优先级、目的地补充：如果没有创建根对象，直接使用getInstance创建叶对象，会先隐式地创建一个Root 对象。**子Category可以继承父Category的信息：优先级、目的地**
+
+示例代码先创建根对象再创建叶对象：
+
+~~~c++
+log4cpp::Category& root = log4cpp::Category::getRoot();//获取根日志器
+root.setPriority(log4cpp::Priority::WARN);//设置日志等级为WARN，即只显示警告、错误、致命的日志
+root.addAppender(appender1);//绑定appender1，输出到控制台
+
+log4cpp::Category& sub1 = log4cpp::Category::getInstance(std::string("sub1"));//获取sub1日志器
+sub1.addAppender(appender2);//绑定appender2，输出到文件
+~~~
+
+也可以一行语句创建叶对象：
+
+~~~c++
+log4cpp::Category& sub1 =log4cpp::Category::getRoot().getInstance("salesDepart"); //记录的日志来源会是salesDepart
+sub1.setPriority(log4cpp::Priority::WARN);
+sub1.addAppender(appender1);
+~~~
+
+这里需要注意的是，例子中sub1本质上是绑定Category对象的引用，在代码中利用sub1去 进行设置优先级、添加目的地、记录日志等操作； getInstance的参数salesDepart表示的是日志信息中记录的Category名称，也就是日志来源  —— 对应了布局中的%c 所以一般在使用时这两者的名称取同一个名称，统一起来，能够更清楚地知道该条日志是 来源于salesDepart这个模块。
+
+#### 日志优先级（Priority）
+
+对于 log4cpp 而言，有两个优先级需要注意，一个是日志记录器的优先级，另一个就是某 一条日志的优先级。Category对象就是日志记录器，在使用时须设置好其优先级；某一行 日志的优先级，就是Category对象在调用某一个日志记录函数时指定的级别，如  logger.debug("this is a debug message") ，这一条日志的优先级就是DEBUG级别的。简言之：
+
+**日志系统有一个优先级A，日志信息有一个优先级B。只有B高于或等于A的时候，这条日志才会被输出（或保存），当B低于A的时候，这条日志会被过滤；**
+
+### 定制日志系统
+
+
 
 ## 运算符重载
 
@@ -2703,5 +2801,451 @@ int main(){
 | 嵌套类访问外部类 | 不能访问私有和保护 | 外部类声明嵌套类为友元 |
 | 外部类访问嵌套类 | 不能访问私有和保护 | 外部类设为私有类的友元 |
 
-### 单例对象自动释放
+### 单例对象自动释放*
+
+如果将单例对象创建在静态区无需管理，系统会自动释放。
+
+~~~c++
+class Singleton {
+public:
+    //单例对象创建在静态区
+    static Singleton& getInstance(int _ix,int _iy){
+        static Singleton pinstance = Singleton(_ix,_iy);
+        return pinstance;
+    }
+    void print() const{
+        cout<<"("<<_ix<<","<<_iy<<")"<<endl;
+    }
+    friend class AutoRelease;
+
+private:
+    Singleton(int _ix,int _iy):_ix(_ix),_iy(_iy) { std::cout << "Constructor\n"; }
+    ~Singleton() { std::cout << "Destructor\n"; }
+    int _ix;
+    int _iy;
+};
+int main(){
+    Singleton &instance = Singleton::getInstance(1,2);
+    instance.print();
+    return 0;
+}
+~~~
+
+检查发现不会出现内存泄露情况：
+
+![image-20250418094940344](./c++.assets/image-20250418094940344.png)
+
+如果是在堆区创建单例对象则系统不会自动释放，需要手动设计自动释放。
+
+~~~c++
+class Singleton {
+public:
+    //单例对象创建在堆区
+    static Singleton* getInstance(int _ix,int _iy){
+        Singleton *pinstance = new Singleton(_ix,_iy);
+        return pinstance;
+    }
+
+    void print() const{
+        cout<<"("<<_ix<<","<<_iy<<")"<<endl;
+    }
+    friend class AutoRelease;
+
+private:
+    Singleton(int _ix,int _iy):_ix(_ix),_iy(_iy) { std::cout << "Constructor\n"; }
+    ~Singleton() { std::cout << "Destructor\n"; }
+
+    int _ix;
+    int _iy;
+};
+class AutoRelease{
+public:
+    AutoRelease(Singleton *p):_p(p){cout<<"AutoRelease(Singleton)"<<endl;}
+    ~AutoRelease(){
+        cout<<"~AutoRelease()"<<endl;
+        if(_p){
+            delete _p;
+            _p = nullptr;
+        }
+    }
+private:
+    Singleton * _p;
+};
+int main(){
+    // Singleton *pinstance = Singleton::getInstance(1,2);
+    // AutoRelease ar(pinstance);
+    // pinstance->print();
+    
+    Singleton *pinstance = Singleton::getInstance(1,2);
+    pinstance->print();
+
+    return 0;
+}
+~~~
+
+发生内存泄漏：
+
+![image-20250418095505685](./c++.assets/image-20250418095505685.png)
+
+#### 方式一：利用另一个对象的生命周期来管理单例对象
+
+~~~c++
+class Singleton {
+public:
+    //单例对象创建在堆区
+    static Singleton* getInstance(int _ix,int _iy){
+        Singleton *pinstance = new Singleton(_ix,_iy);
+        return pinstance;
+    }
+
+    void print() const{
+        cout<<"("<<_ix<<","<<_iy<<")"<<endl;
+    }
+    friend class AutoRelease;
+
+private:
+    Singleton(int _ix,int _iy):_ix(_ix),_iy(_iy) { std::cout << "Constructor\n"; }
+    ~Singleton() { std::cout << "Destructor\n"; }
+
+    int _ix;
+    int _iy;
+};
+class AutoRelease{
+public:
+    AutoRelease(Singleton *p):_p(p){cout<<"AutoRelease(Singleton)"<<endl;}
+    ~AutoRelease(){
+        cout<<"~AutoRelease()"<<endl;
+        if(_p){
+            delete _p;
+            _p = nullptr;
+        }
+    }
+private:
+    Singleton * _p;
+};
+int main(){
+    Singleton *pinstance = Singleton::getInstance(1,2);
+    AutoRelease ar(pinstance);
+    pinstance->print();
+
+    return 0;
+}
+~~~
+
+![image-20250418095749061](./c++.assets/image-20250418095749061.png)
+
+#### 方式二：嵌套类结合静态对象
+
+~~~c++
+class Singleton {
+public:
+    //单例对象创建在堆区
+    static Singleton* getInstance(int _ix,int _iy){
+        if(!pInstance){
+            pInstance = new Singleton(_ix,_iy);
+        }
+        return pInstance;
+    }
+    void print() const{
+        cout<<"("<<_ix<<","<<_iy<<")"<<endl;
+    }
+    
+private:
+    Singleton(int _ix,int _iy):_ix(_ix),_iy(_iy) { std::cout << "Constructor\n"; }
+    ~Singleton() { std::cout << "Destructor\n"; }
+
+    int _ix;
+    int _iy;
+    static Singleton* pInstance;
+    class AutoRelease{
+    public:
+        ~AutoRelease(){
+            cout<<"~AutoRelease()"<<endl;
+            if(pInstance){
+                delete pInstance;
+                pInstance = nullptr;
+            }
+        }
+
+    };
+    static AutoRelease autoRelease;
+};
+Singleton* Singleton::pInstance = nullptr;//在类外必须堆静态成员变量进行定义，用于指向唯一的单例对象
+Singleton::AutoRelease Singleton::autoRelease;//定义autoRelease静态成员
+int main(){
+    Singleton::getInstance(1,2)->print();
+    return 0;
+}
+~~~
+
+![image-20250418101050738](./c++.assets/image-20250418101050738.png)
+
+#### 方式三：atexit+destory
+
+~~~c++
+class Singleton {
+public:
+    //单例对象创建在堆区
+    static Singleton* getInstance(int _ix,int _iy){
+        if(!pInstance){
+            pInstance = new Singleton(_ix,_iy);
+            std::atexit(&destory);//注册销毁函数
+        }
+        return pInstance;
+    }
+    void print() const{
+        cout<<"("<<_ix<<","<<_iy<<")"<<endl;
+    }
+    
+private:
+    Singleton(int _ix,int _iy):_ix(_ix),_iy(_iy) { std::cout << "Constructor\n"; }
+    ~Singleton() { std::cout << "Destructor\n"; }
+    static void destory(){
+        if(pInstance){
+            delete pInstance;
+            pInstance = nullptr;
+            cout<<"atexit: Deleted Singleton"<<endl;
+        }
+    }
+    int _ix;
+    int _iy;
+    static Singleton* pInstance;
+};
+Singleton* Singleton::pInstance = nullptr;//在类外必须堆静态成员变量进行定义，用于指向唯一的单例对象
+int main(){
+    Singleton::getInstance(1,2)->print();
+    return 0;
+}
+~~~
+
+![image-20250418102754984](./c++.assets/image-20250418102754984.png)
+
+#### 方式四：atexit + pthread_once
+
+~~~c++
+class Singleton {
+public:
+    //单例对象创建在堆区
+    static Singleton* getInstance(){
+        pthread_once(&_once,init_r);
+        return pInstance;
+    }
+    static void init_r(){
+        pInstance = new Singleton(1,2);
+        atexit(destory);
+    }
+    void print() const{
+        cout<<"("<<_ix<<","<<_iy<<")"<<endl;
+    }
+    
+private:
+    Singleton(int _ix,int _iy):_ix(_ix),_iy(_iy) { std::cout << "Constructor\n"; }
+    ~Singleton() { std::cout << "Destructor\n"; }
+    static void destory(){
+        if(pInstance){
+            delete pInstance;
+            pInstance = nullptr;
+            cout<<"atexit: Deleted Singleton"<<endl;
+        }
+    }
+    int _ix;
+    int _iy;
+    static Singleton* pInstance;
+    static pthread_once_t _once;
+};
+Singleton* Singleton::pInstance = nullptr;
+pthread_once_t Singleton::_once = PTHREAD_ONCE_INIT;
+int main(){
+    Singleton::getInstance()->print();
+    return 0;
+}
+~~~
+
+![image-20250418104203251](./c++.assets/image-20250418104203251.png)
+
+### String底层实现*
+
+## 关联式容器
+
+### set
+
+**set中存放的元素是唯一的，不能重复；**
+
+**默认情况下，会按照元素进行升序排列；**
+
+**set集合中的元素不可修改；**
+
+**底层采用红黑树实现；**
+
+#### set的构造
+
+无参构造
+
+~~~c++
+set<int> numbers;
+~~~
+
+迭代器方式构造
+
+~~~C++
+set<int> numbers2{1,3,5,7,9};
+set<int> numbers4(numbers2.begin(),numbers2.end());
+~~~
+
+拷贝构造
+
+~~~c++
+set<int> numbers2{1,3,5,7,9};
+set<int> numbers3 = numbers2;
+~~~
+
+标准初始化列表
+
+~~~c++
+set<int> numbers2{1,3,5,7,9};
+~~~
+
+两种遍历方式
+
+~~~c++
+//迭代器方式遍历
+set<int>::iterator it = numbers2.begin();
+while(it!=numbers2.end()){
+    cout<<*it<<" ";
+    it++;
+}
+cout<<endl;
+
+//增强for循环遍历
+for(auto & nu:numbers2){
+    cout<<nu<<" ";
+}
+~~~
+
+#### set的查找
+
+~~~c++
+cout<<numbers2.count(7)<<endl;//能找到返回1
+cout<<numbers2.count(10)<<endl;//找不到返回0
+
+auto it2 = numbers2.find(7);
+cout<<*it2<<endl;//7 找到则返回元素相应的迭代器
+it2 = numbers2.find(10);
+if(it2==numbers2.end()){
+    cout<<"未找到该元素！"<<endl;//找不到返回numbers.end()
+}
+~~~
+
+#### set的插入
+
+**插入单个元素**
+
+insert函数的返回类型是pair类型，包含两个对象成员，第一个是对应set的迭代器，第二个 是bool值。
+如果插入成功，则返回“ 插入元素对应迭代器和true” ；
+如果插入失败，则返回 “阻止插入的元素（原本就有的这个元素）对应迭代器和false”.
+
+~~~c++
+pair<set<int>::iterator,bool> ret = numbers2.insert(8);
+if(ret.second){
+    cout << "该元素插入成功:"<< *(ret.first) << endl;
+}else{
+    cout << "该元素插入失败，表明该元素已存在" << endl;
+}
+~~~
+
+**插入多个元素**
+
+~~~c++
+int arr[5] = {67,68,69,70,71};
+numbers2.insert(arr,arr+5);
+for(auto & nu:numbers2){
+    cout<<nu<<" ";
+}
+cout<<endl;
+numbers2.insert({100,105,103});
+for(auto & nu:numbers2){
+    cout<<nu<<" ";
+}
+cout<<endl;
+~~~
+
+### map
+
+`map` 是 C++ STL 中非常常用的一种关联式容器，它是一种 **键值对（key-value）** 的数据结构，底层是 **红黑树** 实现的。默认按照key升序排列。key值唯一value可以重复。
+
+#### map的构造
+
+~~~c++
+map<int,string> number ={
+    {1,"hellow"},
+    {2,"world"},
+    {3,"wangdao"},
+    pair<int,string>(4,"hubei"),
+    pair<int,string>(5,"wangdao"),
+    make_pair(9,"shenzhen"),
+    make_pair(10,"shanghai"),
+    make_pair(10,"beijing")
+};
+
+map<int,string>::iterator it = number.begin();
+while(it!=number.end()){
+    cout<<(*it).first<<" "<<it->second<<endl;
+    ++it;
+}
+cout<<endl;
+~~~
+
+#### map的查找
+
+~~~c++
+cout<<number.count(1)<<endl;//键值存在返回1
+cout<<number.count(9)<<endl;//键值不存在返回0
+
+auto it2 = number.find(3);//找到则返回元素相应的迭代器，找不到则返回number.end()
+if(it2 == number.end()){
+    cout<<"该元素不在map中!"<<endl;
+}else{
+    cout<<it2->first<<" "<<it2->second<<endl;
+}
+~~~
+
+#### map的插入
+
+**插入一对键值对**
+
+~~~c++
+pair<map<int,string>::iterator,bool> ret = number.insert(pair<int,string>(8,"nanjing"));//第一个对象成员是map元素相应的迭代器，第二个成员是boll值
+if(ret.second){
+    cout<<"元素插入成功！"<<endl;
+}else{
+    cout<<ret.first->first<<" "<<ret.first->second<<endl;
+    cout<<"该元素插入失败！"<<endl;
+}
+~~~
+
+**插入一组键值对**
+
+~~~c++
+map<int,string> number2 = {{10,"c++"},{11,"python"}};
+number.insert(number2.begin(),number2.end());
+number.insert({{20,"java"},{21,"go"}});
+for(auto & num : number){
+    cout<<num.first<<" "<<num.second<<endl;
+}
+~~~
+
+#### map的下标操作
+
+1. map下标操作返回的是map中元素（pair）的value
+2. 下标访问运算符中的值代表key，而不是传统意义上的下标
+3. 如果进行下标操作时下标值传入一个不存在的key，那么会将这个key和空的value插入 到map中
+4. 下标访问可以进行写操作
+
+~~~c++
+number[1] = "hi";//可以通过下标修改元素
+cout<<number[22]<<endl;//如果通过下标访问一个键值不存在的元素会添加该元素其value值为空
+for(auto & num : number){
+    cout<<num.first<<" "<<num.second<<endl;
+}
+~~~
 
