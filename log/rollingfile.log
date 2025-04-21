@@ -1,1 +1,4 @@
-2025-04-19 17:05:44,296 [category] [ERROR] [singleton_log.cc:65][main] Something went wrong: code = -1
+2025-04-20 20:10:46,701 [INFO] [logTest.cc:9][main] Start main
+2025-04-20 20:10:46,701 [INFO] [logTest.cc:5][testFunc] testFunc running with x = 42
+2025-04-20 20:10:46,701 [DEBUG] [logTest.cc:11][main] Result = 52
+2025-04-20 20:10:46,701 [ERROR] [logTest.cc:12][main] Something went wrong: code = -1

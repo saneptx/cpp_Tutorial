@@ -35,7 +35,7 @@ int main(){
 
     //3.创建日志记录器
     //引用名salesDepart是在代码中使用的，表示Category对象
-    //参数中salesDepart实在获取日志来源是返回的记录器的名字
+    //参数中salesDepart是在获取日志来源是返回的记录器的名字
     //一般让两者相同，方便理解
     Category & salesDepart = Category::getInstance("salesDpart");
 
