@@ -4097,3 +4097,318 @@ int main(){
 ~~~
 
 给Derived类手动定义复制控制函数，注意在其中显式调用相应的基类的复制控制函数 （注意：派生类对象进行复制时一定会马上调用派生类的复制控制函数，在进行复制时会首先复制基类的部分，此时调用基类的复制控制函数）
+
+## 多态
+
+C++ 支持两种多态性：编译时多态和运行时多态。
+
+**编译时多态：**也称为静态多态，我们之前学习过的函数重载、运算符重载就是采用的静态 多态，C++编译器根据传递给函数的参数和函数名决定具体要使用哪一个函数，又称为静 态联编。 
+
+**运行时多态：**在一些场合下，编译器无法在编译过程中完成联编，必须在程序运行时完成 选择，因此编译器必须提供这么一套称为“动态联编”（dynamic binding）的机制，也叫动态联编。C++通过虚函数来实现动态联编。接下来，我们提到的多态，不做特殊说明，指的就是动态多态。
+
+### 虚函数
+
+虚函数的定义在一个成员函数的前面加上virtual关键字，该函数就成为虚函数
+
+~~~c++
+#include<iostream>
+using namespace std;
+
+class Base{
+public:
+    Base(long x)
+    : _base(x)
+    {}
+    virtual void display() const{//添加virtual
+        cout << "Base::display()" << endl;
+    }
+private:
+    long _base;
+};
+
+class Derived
+: public Base
+{
+public:
+    Derived(long base,long derived)
+    : Base(base)//创建基类子对象
+    , _derived(derived)
+    {}
+    void display() const{
+        cout << "Derived::display()" << endl;
+    }
+private:
+    long _derived;
+};
+
+void print(Base * pbase){
+    pbase->display();
+}
+
+void test(){
+    Base base(10);
+    Derived derived(2,3);
+    print(&base);
+    print(&derived);
+    cout << "sizeof(Base):" << sizeof(Base) << endl;
+    cout << "sizeof(Derived):" << sizeof(Derived) << endl;
+}
+int main(){
+    test();
+    return 0;
+}
+~~~
+
+![image-20250421215304971](./c++.assets/image-20250421215304971.png)
+
+给Base中的display函数加上virtual关键字修饰，得到的结果
+
+![image-20250421215422569](./c++.assets/image-20250421215422569.png)
+
+从运行结果中我们发现，virtual关键字加入后，发生了一件“奇怪”的事情 —— 用基类指针 指向派生类对象后，通过这个基类对象竟然可以调用派生类的成员函数。 而且，基类和派生类对象所占空间的大小都改变了，说明其内存结构发生了变化。
+
+![image-20250421215447690](./c++.assets/image-20250421215447690.png)
+
+#### 虚函数的实现原理
+
+##### 虚函数指针
+
+当Base的display函数加上了virtual关键字，变成了一个虚函数，Base对象的存储布局就改变了。在存储的开始位置会多加一个虚函数指针， **该虚函数指针指向一张虚函数表（简称虚表）**，其中存放的是虚函数的入口地址。Derived继承了Base类，那么创建一个Derived对象，依然会创建出一个Base类的基类子对象。
+
+![image-20250421215619688](./c++.assets/image-20250421215619688.png)
+
+在Derived类中又定义了display函数，发生了覆盖的机制（override），覆盖的是虚函数表 中虚函数的入口地址
+
+![image-20250421215658380](./c++.assets/image-20250421215658380.png)
+
+Base* p 去指向Derived对象，依然只能访问到基类的部分。用指针p去调用display函数， 发现是一个虚函数，那么会**通过vfptr找到虚表**，此时虚表中存放的是Derived::display的 入口地址，所以调用到Derived的display函数。
+
+##### 虚函数覆盖
+
+如果一个基类的成员函数定义为虚函数，那么它在所有派生类中也保持为虚函数，即使在 派生类中省略了virtual关键字，也仍然是虚函数。虚函数一般用于灵活拓展，所以需要派 生类中对此虚函数进行覆盖。覆盖的格式有一定的要求：
+
+- 与基类的虚函数有相同的函数名； 
+- 与基类的虚函数有相同的参数个数； 
+- 与基类的虚函数有相同的参数类型； 
+- 与基类的虚函数有相同的返回类型。
+
+在虚函数的函数参数列表之后，函数体的大括号之前，加上override关键字，告诉编译器 此处定义的函数是要对基类的虚函数进行覆盖。
+
+~~~c++
+class Base{
+public:
+    Base(long x)
+    : _base(x)
+    {}
+    virtual void display() const{
+        cout << "Base::display()" << endl;
+    }
+private:
+    long _base;
+};
+
+class Derived
+: public Base
+{
+public:
+    Derived(long base,long derived)
+    : Base(base)//创建基类子对象
+    , _derived(derived)
+    {}
+    void display() const override{
+        cout << "Derived::display()" << endl;
+    }
+private:
+    long _derived;
+};
+~~~
+
+覆盖总结：
+
+1. 覆盖是在虚函数之间的概念，需要派生类对象中定义的虚函数与基类中定义的虚函 数的形式完全相同；
+2. 当基类中定义了虚函数时，派生类去进行覆盖，即使在派生类的同名的成员函数前 不加virtual，依然是虚函数；
+3. 发生在基类派生类之间，基类与派生类中同时定义相同的虚函数 覆盖的是虚函数表 中的入口地址，并不是覆盖函数本身。
+
+##### 多态被激活的条件*
+
+多态被激活需要满足如下条件：
+
+1. 基类定义虚函数
+2. **派生类中要覆盖虚函数 （覆盖的是虚函数表中的地址信息）**
+3. 创建派生类对象
+4. 基类的指针指向派生类对象（或基类引用绑定派生类对象）
+5. **通过基类指针（引用）调用虚函数**
+
+最终的效果：基类指针调用到了派生类实现的虚函数。
+
+##### 虚函数表
+
+在虚函数机制中virtual关键字的含义
+
+1. 虚函数是存在的；（存在）
+2. 通过间接方式访问；（间接）
+3. 通过基类的指针访问到派生类的函数，基类的指针共享了派生类的方法；（共享）
+
+如果没有虚函数，当通过pbase指针去调用一个普通的成员函数，那么就不会通过虚函数 指针和虚表，直接到程序代码区中找到该函数；有了虚函数，去找这个虚函数的方式就成了间接的方式。
+
+**面试常考题***
+
+> 虚表存放在哪里？
+
+编译完成时，虚表应该已经存在；在使用的过程中，虚函数表不应该被修改掉（如果能修改，将会找不到对应的虚函数）——应该存在只读段——具体位置不同厂家有不 同实现。
+
+> 一个类中虚函数表有几张？
+
+虚函数表（虚表）可以理解为是一个数组，存放的是一个个虚函数的地址
+一个类可以没有虚函数表（没有虚函数就没有虚函数表）；
+可以有一张虚函数表（即使这个类有多个虚函数，将这些虚函数的地址都存在虚函数表中）；
+也可以有多张虚函数表（继承多个有虚函数的基类）
+
+![image-20250421220828512](./c++.assets/image-20250421220828512.png)
+
+![image-20250421220843405](./c++.assets/image-20250421220843405.png)
+
+> 虚函数的底层实现是怎样的？
+
+虚函数的底层是通过虚函数表实现的。当类中定义了虚函数之后，就会在对象的存储开始位置，多一个虚函数指针，该虚函数指针指向一张虚函数表，虚函数表中存储的是虚函数入口地址。
+
+> 三个概念的区分
+
+重载  (overload)   ：  发生在同一个类中， 当函数名称相同时 ，函数参数类型、顺序  、个数任一不同；
+隐藏  (oversee)   ：  发生在基类派生类之间 ，函数名称相同时，就构成隐藏（参数不同也能构成隐藏）；
+覆盖(override)：  发生在基类派生类之间，基类与派生类中同时定义相同的虚函数， 覆盖的是虚函数表中的入口地址，并不是覆盖函数本身；
+
+#### 虚函数的限制
+
+1. **构造函数不能设为虚函数**
+   构造函数的作用是创建对象，完成数据的初始化，而虚函数机制被激活的条件之一就是要 先创建对象，有了对象才能表现出动态多态。如果将构造函数设为虚函数，那此时构造未 执行完，对象还没创建出来，存在矛盾。
+
+2. **静态成员函数不能设为虚函数**
+   虚函数的实际调用：   `** this -> vfptr -> vtable -> virtual function **`，但是静态成员函数没有this指针，所以无法访问到vfptr
+
+3. **Inline函数不能设为虚函数**
+
+   因为inline函数在编译期间完成替换，而在编译期间无法展现动态多态机制，所以效果是冲 突的如果同时存在，inline失效
+
+4. **普通函数不能设为虚函数**
+   虚函数要解决的是对象多态的问题，与普通函数无关
+
+#### 虚函数的各种访问情况
+
+虚函数机制的触发条件中规定了要使用基类指针（或引用）来调用虚函数，那么其他的调用方式会是什么情况呢？
+
+**通过派生类对象直接调用虚函数**
+
+并没有满足动态多态触发机制的条件，此时只是Derived中定义display函数对Base中的 display函数发生了隐藏。
+
+~~~c++
+class Grandpa
+{
+public:
+    Grandpa(){ cout << "Grandpa()" << endl; }
+    ~Grandpa(){ cout << "~Grandpa()" << endl; }
+    virtual void func1() {
+        cout << "Grandpa::func1()" << endl;
+    }
+    virtual void func2(){
+        cout << "Grandpa::func2()" << endl;
+    }
+};
+class Parent
+: public Grandpa
+{
+public:
+    Parent(){
+        cout << "Parent()" << endl;
+        func1();//构造函数中调用虚函数
+    }
+    ~Parent(){
+        cout << "~Parent()" << endl;
+        func2();//析构函数中调用虚函数
+    }
+};
+class Son
+: public Parent
+{
+public:
+    Son() { cout << "Son()" << endl; }
+    ~Son() { cout << "~Son()" << endl; }
+    virtual void func1() override {
+        cout << "Son::func1()" << endl;
+    }
+    virtual void func2() override{
+        cout << "Son::func2()" << endl;
+    }
+};
+
+void test0(){
+    Son ss;
+    Grandpa * p = &ss;
+    p->func1();
+    p->func2();
+}
+int main(){
+
+    test0();
+    return 0;
+}
+~~~
+
+![image-20250421223240084](./c++.assets/image-20250421223240084.png)
+
+在parent的构造函数执行时，并不知道是在构造Son的对象，在此过程中，只能看到本层及 以上的部分（因为Grandpa类的基类子对象已经创建完毕，虚表中记录了Grandpa::func1 和func2的地址）。在Parent的析构函数执行时，此时Son的析构函数已经执行完了，也只能看到本层及以上的部分。
+
+#### 在普通成员函数中调用虚函数
+
+~~~c++
+class Base{
+public:
+    Base(long x)
+    : _base(x)
+    {}
+    virtual void display() const{
+        cout << "Base::display()" << endl;
+    }
+    void func1(){
+        display();
+        cout << _base << endl;
+    }
+    void func2(){
+        Base::display();
+    }
+private:
+    long _base = 10;
+};
+class Derived
+: public Base
+{
+public:
+    Derived(long base,long derived)
+    : Base(base)
+    , _derived(derived)
+    {}
+    void display() const override{
+        cout << "Derived::display()" << endl;
+    }
+private:
+    long _derived;
+};
+void test0(){
+    Base base(10);
+    Derived derived(1,2);
+    base.func1();
+    base.func2();
+    derived.func1(); //调用了Derived::display();
+    derived.func2();
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+![image-20250421224639871](./c++.assets/image-20250421224639871.png)
+
+第1/2/4次调用，显然调用Base的display函数。
+
+第3 次调用的情况比较特殊：derived对象调用func1函数，因为Derived类中没有重新定义自己的func1函数，所以回去调用基类子对象的func1函数。 可以理解为this指针此时发生了向上转型，成为了Base*类型。此时this指针还是指向的derived对象，就符合基类指针指向派生类对象的条件，在func1中调用虚函数display，触发动态多态机制。
