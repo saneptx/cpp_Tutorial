@@ -2,10 +2,6 @@
 #include<string.h>
 using namespace std;
 
-#include<iostream>
-#include<string.h>
-using namespace std;
-
 class Base{
 public:
     Base(long base,const char * _str)
