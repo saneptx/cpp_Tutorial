@@ -3438,7 +3438,7 @@ class Point3D
 
 1. 不管什么继承方式，派生类内部都不能访问基类的私有成员；
 2. 不管什么继承方式，派生类内部除了基类的私有成员不可以访问，其他的都可以访问；
-3. 不管什么继承方式，派生类对象在类外除了公有继承基类中的公有成员可以访问外，其 他的都不能访问。
+3. 不管什么继承方式，派生类对象在类外除了公有继承基类中的公有成员可以访问外，其他的都不能访问。
 
 **面试问题***：
 
@@ -4102,9 +4102,9 @@ int main(){
 
 C++ 支持两种多态性：编译时多态和运行时多态。
 
-**编译时多态：**也称为静态多态，我们之前学习过的函数重载、运算符重载就是采用的静态 多态，C++编译器根据传递给函数的参数和函数名决定具体要使用哪一个函数，又称为静 态联编。 
+**编译时多态：**也称为静态多态，我们之前学习过的函数重载、运算符重载就是采用的静态多态，C++编译器根据传递给函数的参数和函数名决定具体要使用哪一个函数，又称为静态联编。 
 
-**运行时多态：**在一些场合下，编译器无法在编译过程中完成联编，必须在程序运行时完成 选择，因此编译器必须提供这么一套称为“动态联编”（dynamic binding）的机制，也叫动态联编。C++通过虚函数来实现动态联编。接下来，我们提到的多态，不做特殊说明，指的就是动态多态。
+**运行时多态：**在一些场合下，编译器无法在编译过程中完成联编，必须在程序运行时完成选择，因此编译器必须提供这么一套称为“动态联编”（dynamic binding）的机制，也叫动态联编。C++通过虚函数来实现动态联编。接下来，我们提到的多态，不做特殊说明，指的就是动态多态。
 
 ### 虚函数
 
@@ -4185,14 +4185,14 @@ Base* p 去指向Derived对象，依然只能访问到基类的部分。用指�
 
 ##### 虚函数覆盖
 
-如果一个基类的成员函数定义为虚函数，那么它在所有派生类中也保持为虚函数，即使在 派生类中省略了virtual关键字，也仍然是虚函数。虚函数一般用于灵活拓展，所以需要派 生类中对此虚函数进行覆盖。覆盖的格式有一定的要求：
+如果一个基类的成员函数定义为虚函数，那么它在所有派生类中也保持为虚函数，即使在派生类中省略了virtual关键字，也仍然是虚函数。虚函数一般用于灵活拓展，所以需要派 生类中对此虚函数进行覆盖。覆盖的格式有一定的要求：
 
 - 与基类的虚函数有相同的函数名； 
 - 与基类的虚函数有相同的参数个数； 
 - 与基类的虚函数有相同的参数类型； 
 - 与基类的虚函数有相同的返回类型。
 
-在虚函数的函数参数列表之后，函数体的大括号之前，加上override关键字，告诉编译器 此处定义的函数是要对基类的虚函数进行覆盖。
+在虚函数的函数参数列表之后，函数体的大括号之前，加上override关键字，告诉编译器此处定义的函数是要对基类的虚函数进行覆盖。
 
 ~~~c++
 class Base{
@@ -4226,8 +4226,8 @@ private:
 覆盖总结：
 
 1. 覆盖是在虚函数之间的概念，需要派生类对象中定义的虚函数与基类中定义的虚函 数的形式完全相同；
-2. 当基类中定义了虚函数时，派生类去进行覆盖，即使在派生类的同名的成员函数前 不加virtual，依然是虚函数；
-3. 发生在基类派生类之间，基类与派生类中同时定义相同的虚函数 覆盖的是虚函数表 中的入口地址，并不是覆盖函数本身。
+2. 当基类中定义了虚函数时，派生类去进行覆盖，即使在派生类的同名的成员函数前不加virtual，依然是虚函数；
+3. 发生在基类派生类之间，基类与派生类中同时定义相同的虚函数覆盖的是虚函数表中的入口地址，并不是覆盖函数本身。
 
 ##### 多态被激活的条件*
 
@@ -4412,3 +4412,1459 @@ int main(){
 第1/2/4次调用，显然调用Base的display函数。
 
 第3 次调用的情况比较特殊：derived对象调用func1函数，因为Derived类中没有重新定义自己的func1函数，所以回去调用基类子对象的func1函数。 可以理解为this指针此时发生了向上转型，成为了Base*类型。此时this指针还是指向的derived对象，就符合基类指针指向派生类对象的条件，在func1中调用虚函数display，触发动态多态机制。
+
+#### 抽象类
+
+抽象类有两种形式：
+1 . 定义了纯虚函数的类，称为抽象类。
+2 . 只定义了protected型构造函数的类，也称为抽象类
+
+##### 纯虚函数
+
+纯虚函数是一种特殊的虚函数，在许多情况下，在基类中不能对虚函数给出有意义的实 现，而把它声明为纯虚函数，它的实现留给该基类的派生类去做。这就是纯虚函数的作 用。纯虚函数的格式如下：
+~~~c++
+class 类名{
+public:
+ virtual 返回类型 函数名(参数...) = 0;
+};
+~~~
+
+在基类中声明纯虚函数就是在告诉子类的设计者 —— 你必须提供一个纯虚函数的实现，但 我不知道你会怎样实现它。
+
+多个派生类可以对纯虚函数进行多种不同的实现，但是都需要遵循基类给出的接口（纯虚函数的声明）。
+
+**定义了纯虚函数的类成为抽象类，抽象类不能实例化对象。**
+
+~~~c++
+class A
+{
+public:
+    virtual void print() = 0;
+    virtual void display() = 0;
+};
+class B
+: public A
+{
+public:
+    virtual void print() override{
+        cout << "B::print()" << endl;
+    }
+};
+class C
+: public B
+{
+public:
+    virtual void display() override{
+        cout << "C::display()" << endl;
+    }
+};
+void test0(){
+    //A类定义了纯虚函数，A类是抽象类
+    //抽象类无法创建对象
+    //A a;//error
+    //B b;//error
+    C c;
+    A * pa2 = &c;
+    pa2->print();
+    pa2->display();
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+在A类中声明纯虚函数，A类就是抽象类，无法创建对象；在B类中去覆盖A类的纯虚函数，如果把所有的纯虚函数都覆盖了（都实现了），B类可以创建对象；只要还有一个纯虚函数没有实现，B类也会是抽象类，也无法创建对象；再往下派生C类，完成所有的纯虚函数的实现，C类才能够创建对象。 **最顶层的基类（定义纯虚函数的类）虽然无法创建对象，但是可以定义此类型的指针，指向派生类对象，去调用实现好的纯虚函数。**
+
+纯虚函数使用：
+~~~c++
+class Figure{
+public:
+    virtual string getName() const = 0;
+    virtual double getArea() const = 0;
+};
+class Rectangle//矩形
+: public Figure
+{
+public:
+    Rectangle(double len,double wid)
+    : _length(len)
+    , _width(wid){}
+    string getName() const override
+    {
+        return "矩形";
+    }
+    double getArea() const override
+    {
+        return _length * _width;
+    }
+private:
+    double _length;
+    double _width;
+};
+class Circle
+: public Figure
+{
+public:
+    Circle(double r)
+    : _radius(r){}
+    string getName() const override
+    {
+        return "圆形";
+    }
+    double getArea() const override
+    {
+        return PI * _radius * _radius;
+    }
+private:
+    double _radius;
+};
+class Triangle
+: public Figure
+{
+public:
+    Triangle(double a,double b,double c)
+    : _a(a)
+    , _b(b)
+    , _c(c)
+    {}
+    string getName() const override
+    {
+        return "三角形";
+    }
+    double getArea() const override
+    {
+        double p = (_a + _b + _c)/2;
+        return sqrt(p * (p-_a) * (p- _b)* (p- _c));
+    }
+private:
+    double _a,_b,_c;
+};
+~~~
+
+基类Figure中定义纯虚函数，交给多个派生类去实现，最后可以使用基类的指针（引用） 指向（绑定）不同类型的派生类对象，再去调用已经被实现的虚函数。
+
+纯虚函数就是为了后续扩展而预留的接口。
+
+##### 只定义了protected构造函数的类
+
+当一个类的构造函数被定义为 `protected`（或 `private`）时，**在类外部不能直接创建该类的对象**，只能通过派生类构造。
+
+~~~c++
+class Base {
+protected:
+    Base() {
+        cout << "Base()" << endl;
+    }
+};
+
+class Derived : public Base {
+public:
+    Derived() {
+        cout << "Derived()" << endl;
+    }
+};
+
+void test0(){
+    // Base b; // ❌ 错误：构造函数是 protected
+    Derived d;  // ✅ 可以
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+#### 析构函数设为虚函数*
+
+虽然构造函数不能被定义成虚函数，但析构函数可以定义为虚函数，一般来说，如果类中定义了虚函数，析构函数也应被定义为虚析构函数，尤其是类内有申请的动态内存，需要清理和释放的时候。主要用于：
+✅ 将类声明为抽象类（不可实例化）
+✅ 确保多态删除行为（通过基类指针删除派生类对象时，能正确调用派生类析构函数）
+
+~~~c++
+class Base
+{
+public:
+    Base()
+    : _base(new int(10))
+    { cout << "Base()" << endl; }
+    virtual void display() const{
+        cout << "*_base:" << *_base << endl;
+    }
+    ~Base(){//应该添加virtual关键字将析构函数设置为虚函数
+        if(_base){
+            delete _base;
+            _base = nullptr;
+        }
+        cout << "~Base()" << endl;
+    }
+private:
+    int * _base;
+};
+class Derived
+: public Base
+{
+public:
+    Derived()
+    : Base()
+    , _derived(new int(20))
+    {
+        cout << "Derived()" << endl;
+    }
+        virtual void display() const override{
+        cout << "*_derived:" << *_derived << endl;
+    }
+    ~Derived(){
+        if(_derived){
+            delete _derived;
+            _derived = nullptr;
+        }
+        cout << "~Derived()" << endl;
+    }
+private:
+    int * _derived;
+};
+
+void test0(){
+    Base * pbase = new Derived();
+    pbase->display();
+
+    delete pbase;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+![image-20250422095030777](./c++.assets/image-20250422095030777.png)
+
+在执行delete pbase时，首先会去调用Derived的析构函数，但是此时是通过一个Base类指针去调用，**基类指针删除派生类对象时**，**不会调用派生类的析构函数**，因此导致_derived成员不会被释放，造成内存泄漏！
+
+为了让基类指针能够调用派生类的析构函数，需要将Base的析构函数也设为虚函数。Derived类中发生虚函数的覆盖，将Derived的虚函数表中记录的虚函数地址改变了。析构 函数尽管不重名，也认为发生了覆盖。
+
+![image-20250422095429064](./c++.assets/image-20250422095429064.png)
+
+**在实际的使用中，如果有通过基类指针回收派生类对象的需求，都需要将基类的析构函数设为纯虚函数。**
+
+建议：一个类定义了虚函数，就将它的析构函数设为虚函数。
+
+#### 验证虚表的存在*
+
+~~~c++
+class Base{
+public:
+    virtual void print() {
+        cout << "Base::print()" << endl;
+    }
+    virtual void display() {
+        cout << "Base::display()" << endl;
+    }
+    virtual void show() {
+        cout << "Base::show()" << endl;
+    }
+private:
+    long _base = 10;
+};
+class Derived
+: public Base
+{
+public:
+    virtual void print() {
+        cout << "Derived::print()" << endl;
+    }
+    virtual void display() {
+        cout << "Derived::display()" << endl;
+    }
+    virtual void show() {
+        cout << "Derived::show()" << endl;
+    }
+private:
+    long _derived = 100;
+};
+void test0(){
+    Derived d;
+    long * pDerived = reinterpret_cast<long*>(&d);
+    cout << pDerived[0] << endl;
+    cout << pDerived[1] << endl;
+    cout << pDerived[2] << endl;
+    cout << endl;
+    long * pVtable = reinterpret_cast<long*>(pDerived[0]);
+    cout << pVtable[0] << endl;
+    cout << pVtable[1] << endl;
+    cout << pVtable[2] << endl;
+    cout << endl;
+    typedef void (*Function)();
+    Function f = (Function)(pVtable[0]);
+    f();
+    f = (Function)(pVtable[1]);
+    f();
+    f = (Function)(pVtable[2]);
+    f();
+}
+
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+![image-20250422100356865](./c++.assets/image-20250422100356865.png)
+
+创建一个Derived类对象d，这个对象的内存结构是由三个内容构成的，开始位置是虚 函数指针，第二个位置是long型数据\_base,第三个位置是long型数据_derived。第一次强转将这个Derived类对象视为了存放三个long型元素的数组，打印这个数组中 的三个元素，后两个本身就是long型数据，输出其值，第一个本身是指针（地址）， 打印出来的结果是编译器以long型数据来看待这个地址的值。这个虚函数指针指向虚表，虚表中存放三个虚函数的入口地址（3 * 8字节），那么再将虚表视为存放三个long型元素的数组，第二次强转，直接输出数组的三个元素，得 到的结果是编译器以long型数据来看待这三个函数地址的值。虚表中的三个元素本身是函数指针，那么再将这个三个元素强转成相应类型的函数指 针，就可以通过函数指针进行调用了。验证了虚表中存放虚函数的顺序，是按照声明顺序去存放的。
+
+![image-20250422100654641](./c++.assets/image-20250422100654641.png)
+
+#### 带虚函数的多继承
+
+~~~c++
+class Base1
+{
+public:
+    Base1()
+    : _iBase1(10)
+    { cout << "Base1()" << endl; }
+    virtual void f()
+    {
+        cout << "Base1::f()" << endl;
+    }
+    virtual void g()
+    {
+        cout << "Base1::g()" << endl;
+    }
+    virtual void h()
+    {
+        cout << "Base1::h()" << endl;
+    }
+    virtual ~Base1() {}
+private:
+    double _iBase1;
+};
+class Base2
+{
+public:
+    Base2()
+    : _iBase2(10)
+    { cout << "Base2()" << endl; }
+    virtual void f()
+    {
+        cout << "Base2::f()" << endl;
+    }
+    virtual void g()
+    {
+        cout << "Base2::g()" << endl;
+    }
+    virtual void h()
+    {
+        cout << "Base2::h()" << endl;
+    }
+    virtual ~Base2() {}
+private:
+    double _iBase2;
+};
+class Base3
+{
+public:
+    Base3()
+    : _iBase3(10)
+    { cout << "Base3()" << endl; }
+    virtual void f()
+    {
+        cout << "Base3::f()" << endl;
+    }
+    virtual void g()
+    {
+        cout << "Base3::g()" << endl;
+    }
+    virtual void h()
+    {
+        cout << "Base3::h()" << endl;
+    }
+    virtual ~Base3() {}
+private:
+    double _iBase3;
+};
+class Derived
+: public Base1
+, public Base2
+, public Base3
+{
+public:
+    Derived()
+    : _iDerived(10000)
+    { cout << "Derived()" << endl; }
+    void f()
+    {
+        cout << "Derived::f()" << endl;
+    }
+    void g1()
+    {
+        cout << "Derived::g1()" << endl;
+    }
+private:
+    double _iDerived;
+};
+void test0(){
+    cout << sizeof(Derived) << endl;
+    Derived d;
+
+    Base1* pBase1 = &d;
+    Base2* pBase2 = &d;
+    Base3* pBase3 = &d;
+    cout << "&Derived = " << &d << endl;
+    cout << "pBase1 = " << pBase1 << endl;
+    cout << "pBase2 = " << pBase2 << endl;
+    cout << "pBase3 = " << pBase3 << endl;
+}
+
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+![image-20250422105340321](./c++.assets/image-20250422105340321.png)
+
+BaseX类的内存布局：1个指向虚函数表的指针(vptr)：8字节（64位系统），1个指向double成员变量：8字节，每个BaseX对象大小约为：16字节。
+Derived类**多继承**了三个类，且这三个基类都具有虚函数。每个基类：包含3个虚函数（f，g，h）；有一个double类型的成员变量（8字节）；有一个虚析构函数（4字节）。
+
+~~~c++
+Derived
+├── Base1 子对象（含 vptr1 + _iBase1） → 16 字节
+├── Base2 子对象（含 vptr2 + _iBase2） → 16 字节
+├── Base3 子对象（含 vptr3 + _iBase3） → 16 字节
+└── Derived 自身的成员变量 _iDerived → 8 字节
+合计16+16+16+8=56字节
+~~~
+
+三种不同的基类类型指针指向派生类对象时，实际指向的位置是基类子对象的位置
+
+![image-20250422110759604](./c++.assets/image-20250422110759604.png)
+
+##### 布局规则
+
+1. 每个基类都有自己的虚函数表
+2. 派生类如果有自己的虚函数，会被加入到第一个虚函数表中。
+3. 内存布局中，其基类的布局按照基类被声明时的顺序进行排列（有虚函数的基类会往 上放——希望尽快访问到虚函数）。
+4. 派生类会覆盖基类的虚函数，只有第一个虚函数表中存放的是真实的被覆盖的函数的地址；其它的虚函数表中对应位置存放的并不是真实的对应的虚函数的地址，而是一条跳转指令。
+
+~~~c++
+class A{
+public:
+    virtual void a(){ cout << "A::a()" << endl; }
+    virtual void b(){ cout << "A::b()" << endl; }
+    virtual void c(){ cout << "A::c()" << endl; }
+};
+class B{
+public:
+    virtual void a(){ cout << "B::a()" << endl; }
+    virtual void b(){ cout << "B::b()" << endl; }
+    void c(){ cout << "B::c()" << endl; }
+    void d(){ cout << "B::d()" << endl; }
+};
+class C
+: public A
+, public B
+{
+public:
+    virtual void a(){ cout << "C::a()" << endl; }
+    void c(){ cout << "C::c()" << endl; }
+    void d(){ cout << "C::d()" << endl; }
+};
+//先不看D类
+class D
+: public C
+{
+public:
+    void c(){ cout << "D::c()" << endl; }
+};
+
+void test0(){
+    C c;
+    c.a(); //C::a()  隐藏
+    //c.b(); //冲突
+    c.c(); //C::c() 隐藏
+    c.d(); //C::d() 隐藏
+    cout << endl;
+    A* pa = &c;
+    pa->a(); //C::a() 覆盖
+    pa->b(); //A::b()
+    pa->c(); //C::c() 覆盖
+    //pa->d(); //无法调用
+    cout << endl;
+    B* pb = &c;
+    pb->a(); //C::a() 覆盖
+    pb->b(); //B::b()
+    pb->c(); //B::c() 不是虚函数调用
+    pb->d(); //B::d() 同上
+    cout << endl;
+    C * pc = &c;
+    pc->a(); //C::a() 隐藏
+    //pc->b(); //冲突
+    pc->c(); //C::c() 隐藏
+    pc->d(); //C::d() 隐藏
+}
+
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+![image-20250422113857988](./c++.assets/image-20250422113857988.png)
+
+内存布局：
+
+
+
+![image-20250422113807634](./c++.assets/image-20250422113807634.png)
+
+### 虚拟继承
+
+虚拟继承是为了解决 **“菱形继承”** 中的二义性问题。使用 `virtual` 关键字在继承时指定，表示多个派生类共享同一个基类子对象。
+
+~~~c++
+class A{
+    int _ia;
+    char _ca;
+public:
+    virtual void f(){
+        cout<<"A::f()"<<endl;
+    }
+    virtual void Af(){
+        cout<<"A::Af()"<<endl;
+    }
+};
+class B:virtual public A{
+    int _ib;
+    char _cb;
+public:
+    virtual void f(){
+        cout<<"B::f()"<<endl;
+    }
+    virtual void f1(){
+        cout<<"B:f1()"<<endl;
+    }
+    virtual void Bf(){
+        cout<<"B::Bf()"<<endl;
+    }
+};
+class C:virtual public A{
+    int _ic;
+    char _cc;
+public:
+    virtual void f(){
+        cout<<"C::f()"<<endl;
+    }
+    virtual void f2(){
+        cout<<"C:f2()"<<endl;
+    }
+    virtual void Cf(){
+        cout<<"C::Cf()"<<endl;
+    }
+};
+class D
+:public B
+,public C{
+    int _id;
+    char _cd;
+public:
+    virtual void f(){
+        cout<<"D::f()"<<endl;
+    }
+    virtual void f1(){
+        cout<<"D:f1()"<<endl;
+    }
+    virtual void f2(){
+        cout<<"D:f2()"<<endl;
+    }
+    virtual void Df(){
+        cout<<"D::Df()"<<endl;
+    }
+};
+int main(){
+    D d;
+    // A *pa = &d;
+    std::cout << "D*  : " << &d << std::endl;
+    std::cout << "B*  : " << static_cast<B*>(&d) << std::endl;
+    std::cout << "C*  : " << static_cast<C*>(&d) << std::endl;
+    std::cout << "A*  : " << static_cast<A*>(&d) << std::endl;
+    return 0;
+}
+~~~
+
+![image-20250423173907215](./c++.assets/image-20250423173907215.png)
+
+## 模版
+
+模板是一种通用的描述机制，使用模板允许使用通用类型来定义函数或类。在使用时，通 用类型可被具体的类型，如 int、double 甚至是用户自定义的类型来代替。模板引入一种 全新的编程思维方式，称为“**泛型编程**”或“**通用编程**”。
+
+模板作为实现代码重用机制的一种工具，它可以实现类型参数化，即把类型定义为参数，  从而实现了真正的代码可重用性。模板可以分为两类，一个是函数模版，另外一个是类模 板。通过参数实例化构造出具体的函数或类，称为**模板函数**或**模板类**。
+
+### 模版定义
+
+模板发生的时机是在编译时。模板本质上就是一个代码生成器，它的作用就是让编译器根据实际调用来生成代码。 编译器去处理时，实际上由函数模板生成了多个模板函数，或者由类模板生成了多个模板类。
+
+~~~c++
+//形式：
+template<typename/calss T1,typename T2,...>
+~~~
+
+#### 函数模版
+
+由函数模板到模板函数的过程称之为 实例化，函数模板 --> 生成相应的模板函数 -->编译 --->链接 -->可执行文件。下图中实际上可以理解为生成了四个模板函数
+
+~~~c++
+template <class T>
+T add(T x, T y)
+{
+    return x + y;
+}
+void test0(){
+    short s1 = 1,s2 =2;
+    int i1=3,i2=4;
+    long l1 = 5,l2 = 6;
+    double d1 = 1.1,d2 = 2.2;
+    cout<<"add(s1,s2):"<<add(s1,s2)<<endl;
+    cout<<"add(i1,i2):"<<add(i1,i2)<<endl;
+    cout<<"add(l1,l2):"<<add(l1,l2)<<endl;
+    cout<<"add(d1,d2):"<<add(d1,d2)<<endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+上述代码中在进行模板实例化时，并没有指明任何类型，函数模板在生成模板函数时通过传入的参数类型确定出模板类型，这种做法称为**隐式实例化**。 我们在使用函数模板时还可以在函数名之后直接写上模板的类型参数列表，指定类型，这种用法称为**显式实例化**。
+
+~~~c++
+template <class T>
+T add(T x, T y)
+{
+    return x + y;
+}
+void test0(){
+    int i1 = 3, i2 = 4;
+    cout << "add(i1,i2): " << add<int>(i1,i2) << endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+##### 函数模版的重载
+
+函数模版可以用函数模版进行重载，如果一个函数模版无法实例化出合适的模版函数的时候，可以再给出另一个函数模版
+
+~~~c++
+template <class T>
+T add(T x, T y)
+{
+    return x + y;
+}
+template <class T1,class T2>
+T2 add(T1 x, T2 y)
+{
+    return x + y;
+}
+void test0(){
+    int x = 1;
+    double y =3.5;
+    cout << "add(x,y): " << add(x,y) << endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+函数模板与函数模板重载的条件：
+
+1. 名称相同（这是必须的）
+2. 模版参数列表中模版参数在函数中所处的位置不同——但强烈不建议这样进行重载。这样进行重载时，要注意，隐式实例化可能造成冲突，需要显式实例化。（如果能够通过类型转换去匹配上两个函数模板的时候，即使是显式实例化也很难避免冲突）
+3. 模版参数的个数不一样时，可以构成重载（相对常见）
+
+~~~c++
+template <class T>
+T add(T x, T y)
+{
+    return x + y;
+}
+template <class T1,class T2>
+T1 add(T1 x, T2 y)
+{
+    return x + y;
+}
+template <class T1,class T2>//模版参数列表中模版参数在函数中所处的位置不同，不建议这样做
+T2 add(T1 x, T2 y)
+{
+    return x + y;
+}
+template <class T1,class T2,class T3>//模版参数的个数不同
+T1 add(T1 x, T2 y, T3 z)
+{
+    return x + y + z;
+}
+void test0(){
+    int x = 1;
+    double y =3.5;
+    short z = 2;
+    cout << "add(x,y): " << add(x,y,z) << endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+函数模板与普通函数重载
+
+普通函数优先于函数模版执行——因为普通函数更快。（编译器扫描到函数模板的实现时并没有生成函数，只有扫描到下面调用add函数的 语句时，给add传参，知道了参数的类型，这才生成一个相应类型的模板函数——模 板参数推导。所以使用函数模板一定会增加编译的时间。此处，就直接调用了普通函 数，而不去采用函数模板）
+
+~~~c++
+//函数模板与普通函数重载
+template <class T1, class T2>
+T1 add(T1 t1, T2 t2)
+{
+    return t1 + t2;
+}
+short add(short s1, short s2){
+    cout << "add(short,short)" << endl;
+    return s1 + s2;
+}
+void test0(){
+    short s1 = 1, s2 = 2;
+    int i1 = 1, i2 = 2;
+    //两个参数类型相同时优先调用普通函数
+    cout << add(s1,s2) << endl;
+    cout << add(i1,s1) << endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+对模板的使用，必须要拿到模板的全部实现，如果只有一部分，那么推导也只能推导 出一部分，无法满足需求。 换句话说，就是模板的使用过程中，其实没有了头文件和实现文件的区别，在头文件 中也需要获取模板的完整代码，不能只有一部分。
+
+##### 模版的特化
+
+~~~c++
+template <class T1, class T2>
+T1 add(T1 t1, T2 t2)
+{
+    return t1 + t2;
+}
+//特化模板
+template <>
+const char* add<const char *>(const char * p1,const char * p2){
+    char * ptmp = new char[strlen(p1)+ strlen(p2) + 1]();
+    strcpy(ptmp,p1);
+    strcat(ptmp,p2);
+    return ptmp;
+}
+void test0(){
+    cout<<add("hello ","world")<<endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+使用模板特化时，必须要先有基础的函数模板；如果没有模板的通用形式，无法定义模板的特化形式； 特化模板是为了解决通用模板无法处理的特殊类型的操作；特化版本的函数名、参数列表要和原基础的模板函数相同，避免不必要的错误。
+
+##### 使用模版的规则
+
+1. 在一个模块中定义多个通用模板的写法应该谨慎使用；
+2. 调用函数模板时尽量使用隐式调用，让编译器推导出类型；
+3. 无法使用隐式调用的场景只指定必须要指定的类型；
+4. 需要使用特化模板的场景就根据特化模板将类型指定清楚。
+
+##### 模版的参数类型
+
+类型参数：之前的T/T1/T2等等成为模板参数，也称为类型参数，类型参数T可以写成任何类型
+非类型参数：需要是整型数据， char / short / int / long / size _ t，不能是浮点型，float/double不可以
+
+定义模板时，在模版参数列表中处理类型参数还可以加入非类型参数的值。
+
+~~~c++
+template <class T, int kBase>
+T multiply(T x, T y)
+{
+    return x * y * kBase ;
+}
+void test0(){
+    cout<<multiply<int, 10>(2,3)<<endl;//非类型参数需要实例化进行赋值
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+也可以在定义时直接赋值。
+
+~~~c++
+template <class T, int kBase=10>
+T multiply(T x, T y)
+{
+    return x * y * kBase ;
+}
+void test0(){
+    cout<<multiply(2,3)<<endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+函数模板的模板参数赋默认值与普通函数相似，从右到左，右边的非类型参数赋了默认值，左边的类型参数也可以赋默认值
+
+~~~c++
+template <class T = int, int kBase = 10>
+T multiply(T x, T y)
+{
+    return x * y * kBase ;
+}
+void test0(){
+    double d1 = 1.2,d2 = 1.2;
+    cout<<multiply(d1,d2)<<endl;
+    cout<<multiply<int>(d1,d2)<<endl;
+    cout<<multiply<double,100>(d1,d2)<<endl;
+}
+~~~
+
+![image-20250424103942325](./c++.assets/image-20250424103942325.png)
+
+优先级：实例化时显式指定类型 > 推导的类型 > 类型的默认参数
+
+模板参数的默认值（不管是类型参数还是非类型参数）只有在没有足够的信息用于推导时起作用。当存在足够的信息时，编译器会按照实际参数的类型去调用，不会受到默认值的影响。
+
+##### 成员函数模版
+
+~~~c++
+class Point{
+public:
+    Point(double x,double y)
+    :_x(x)
+    ,_y(y)
+    {}
+    template<class T = int>
+    T convert()
+    {
+        return (T)_x;
+    }
+private:
+    double _x;
+    double _y;
+};
+void test0(){
+    Point pt(1.1,2.2);
+    cout<<pt.convert()<<endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+在类外定义成员函数模版
+~~~c++
+class Point{
+public:
+    Point(double x,double y)
+    :_x(x)
+    ,_y(y)
+    {}
+    template<class T = int>
+    T convert()
+    {
+        return (T)_x;
+    }
+    template<class T>
+    T add(T t);
+private:
+    double _x;
+    double _y;
+};
+template<class T>
+T Point::add(T t){
+    return _x + _y + t;
+}
+void test0(){
+    Point pt(1.1,2.2);
+    cout<<pt.convert()<<endl;
+    cout<<pt.add(2)<<endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+### 类模板
+
+一个类模板允许用户为类定义个一种模式，使得类中的某些数据成员、默认成员函数的参 数，某些成员函数的返回值，能够取任意类型(包括内置类型和自定义类型)。 如果一个类中的数据成员的数据类型不能确定，或者是某个成员函数的参数或返回值的类 型不能确定，就需要将此类声明为模板，它的存在不是代表一个具体的、实际的类，而是代表一类类。
+
+~~~c++
+//定义形式
+template <class/typename T,...>
+class 类名{
+//类定义
+}
+~~~
+
+用类模板的方式实现一个Stack类，可以存放任意类型的数据
+
+~~~c++
+template <class T,int kCapacity = 10>
+class Stack{
+public:
+    Stack()
+    :_top(-1)
+    ,_data(new T[kCapacity]())
+    {
+        cout<<"Stack()"<<endl;
+    }
+    ~Stack(){
+        if(_data){
+            delete[] _data;
+            _data = nullptr;
+        }
+    }
+    cout<<"~Stack()"<<endl;
+    bool empty() const;
+    bool full() const;
+    void push(const T &);
+    void pop();
+    T top();
+private:
+    int _top;
+    T *_data;
+};
+~~~
+
+类模版的成员函数如果放在类模版定义之外进行实现，需要注意
+
+1. 需要带上template模板形参列表（如果有默认参数，此处不要写）
+2. 在添加作用域限定时需要写上完整的类名和模板实参列表
+
+~~~c++
+template <class T, int kCapacity>
+bool Stack<T,kCapacity>::empty() const{
+	return _top ==-1;
+}
+~~~
+
+#### 可变模版参数
+
+可变模板参数( variadic templates )是 C++11 新增的最强大的特性之一，它对参数进行了 高度泛化，它能表示0到任意个数、任意类型的参数。由于可变模版参数比较抽象，使用起 来需要一定的技巧，所以它也是 C++11 中最难理解和掌握的特性之一。可变参数模板和普通模板的语义是一样的，只是写法上稍有区别，声明可变参数模板时需 要在typename 或 class 后面带上省略号 “...” ，省略号写在右边，代表打包
+
+~~~c++
+template <class... Args>
+void func(Args... args);
+//Args叫做模板参数包，args叫做函数参数包。
+~~~
+
+我们在定义一个函数时，可能有很多个不同类型的参数，不适合一一写出，所以提供了可 变模板参数的方法。定义一个可变模板参数； Args里面打包了 T1/T2/T3...这样的一些类型；args里面打包了函数的参数 ；... 在左边就是打包的含义；利用可变参数模板输出参数包中参数的个数
+
+~~~c++
+template<class ...Args>//Args模版参数包
+void display(Args ...args)//args 函数参数包
+{
+    //输出模板参数包中类型参数个数
+    cout << "sizeof...(Args) = " << sizeof...(Args) << endl;
+    //输出函数参数包中参数的个数
+    cout << "sizeof...(args) = " << sizeof...(args) << endl;
+    cout << args[0] <<endl;
+}
+void test0(){
+    display();
+    display(1,"hello",3.3,true);
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+打印出传入参数的所有内容
+
+~~~c++
+//递归的出口
+void print(){
+    cout << endl;
+}
+void print(int x){
+    cout << x << endl;
+}
+//重新定义一个可变参数模板，至少得有一个参数
+template <class T,class ...Args>
+void print(T x, Args ...args)
+{
+    cout << x << " ";
+    print(args...);
+}
+void test0(){
+     //调用普通函数
+    //不会调用函数模板，因为函数模板至少有一个参数
+    print();
+    print(2.3);
+    print(1,"hello",3.6,true);
+    print(1,"hello",3.6,true,100);
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+## 移动语义与智能指针
+
+### 移动语义
+
+#### 左值和右值
+
+左值和右值是针对表达式而言的，左值是指表达式执行结束后依然存在的持久对象，右值 是指表达式执行结束后就不再存在的临时对象。那如何进行区分呢？其实也简单，能对表 达式取地址的，称为左值；不能取地址的，称为右值。 在实际使用过程中，字面值常量、匿名对象（临时对象）、匿名变量（临时变量），都称 为右值。右值又被称为即将被销毁的对象。
+
+~~~c++
+void test0(){
+    int a = 1,b = 2;
+    &a;
+    &b;
+    &(a+b);//ERROR 右值
+    &10;//ERROR 右值
+    &String("hello");//ERROR 右值
+
+    //非const引用尝试绑定
+    int & r1 = a;
+    int & r2 = 1;//ERROR 
+
+    //const引用尝试绑定
+    const int & r3 = 1;
+    const int & r4 = a;
+}
+~~~
+
+>如上定义的 int & r1 和  const int & r3 叫作左值引用与const左值引用
+>
+>非const左值引用只能绑定到左值，不能绑定到右值，也就是非const左值引用只能识 别出左值。
+>
+>const左值引用既可以绑定到左值，也可以绑定到右值，也就是表明const左值引用不能区分左值还是右值。
+
+#### 右值引用
+
+c++11提出了新特性右值引用，右值引用不能绑定到左值，但可以绑定到右值，也就是右值引用能够识别出右值。
+
+~~~c++
+void test0(){
+    int a=1,b=2;
+    //非const引用不能绑定右值
+    int & r1 = a;
+    int & r2 = 1;//ERROR
+
+    //const引用既可以绑定左值，又可以绑定右值
+    const int & r3 = 1;
+    const int & r4 = a;
+    //右值引用只能绑定右值
+    int && r_ref = 10;
+    int && r_ref2 = a; //error
+
+}
+~~~
+
+实际上，右值引用既可以是左值（比如：作为函数的参数、有名字的变量），也可以 是右值（函数的返回类型）
+
+#### 移动构造函数
+
+有了右值引用后，就可以构建移动构造函数
+
+~~~c++
+class String
+{
+public:
+    String(): _str(new char[1]()) {
+        cout<<"String()"<<endl;
+    }//默认无参构造函数
+    String(const char* pstr):_str(new char[strlen(pstr) + 1]()){//字符串字面量构造函数
+        cout<<"String(const char* pstr)"<<endl;
+        strcpy(_str, pstr);
+    }
+    String(const String& rhs) :_str(new char[strlen(rhs._str) + 1]()){//拷贝构造函数
+        cout<<"String(const String& rhs)"<<endl;
+        strcpy(_str, rhs._str);
+    }
+	String(String && rhs)//右值引用构造函数
+    : _str(rhs._str)
+    {
+        cout << "String(String&&)" << endl;
+        rhs._str = nullptr;
+    }
+    String &operator=(const String &rhs){//赋值运算符重载
+        cout<<"String &operator=(const String &rhs)"<<endl;
+        if (this != &rhs){
+            delete[] _str;
+            _str = new char[strlen(rhs._str) + 1];
+            strcpy(_str, rhs._str);
+        }
+        return *this;
+    }
+    ~String(){
+        if (_str){
+        delete [] _str;
+        _str = nullptr;
+        }
+    }
+    const char* c_str() const { return _str; }
+private:
+    char* _str;
+};
+void test0(){
+    cout<<"s1:";
+    String s1;//调用默认构造函数
+
+    cout<<endl<<"s2:";
+    String s2 = "hello";
+
+    cout<<endl<<"s3:";
+    String s3 = s2;//调用拷贝构造函数
+
+    cout<<endl<<"s4:";
+    String s4 = String("world");
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+在没有右值引用构造函数时：
+
+![image-20250425095721823](./c++.assets/image-20250425095721823.png)
+
+s2和s4构造时都采用字符串字面量构造函数后再调用拷贝构造函数，申请了两次内存空间。下面是引入右值引用：
+
+![image-20250425095959886](./c++.assets/image-20250425095959886.png)
+
+只用申请一次内存空间。
+
+![image-20250425100107519](./c++.assets/image-20250425100107519.png)
+
+#### 移动赋值函数
+
+**移动赋值函数**是用于把一个临时对象的资源“转移”到已经存在的对象中，避免复制，提高效率。
+
+~~~c++
+class String
+{
+public:
+    String(): _str(new char[1]()) {
+        cout<<"String()"<<endl;
+    }//默认无参构造函数
+    String(const char* pstr):_str(new char[strlen(pstr) + 1]()){//字符串字面量构造函数
+        cout<<"String(const char* pstr)"<<endl;
+        strcpy(_str, pstr);
+    }
+    String(const String& rhs) :_str(new char[strlen(rhs._str) + 1]()){//拷贝构造函数
+        cout<<"String(const String& rhs)"<<endl;
+        strcpy(_str, rhs._str);
+    }
+    String(String && rhs)//右值引用构造函数
+    : _str(rhs._str)
+    {
+        cout << "String(String&&)" << endl;
+        rhs._str = nullptr;
+    }
+    String &operator=(const String &rhs){//赋值运算符重载
+        cout<<"String &operator=(const String &rhs)"<<endl;
+        if (this != &rhs){
+            delete[] _str;
+            _str = new char[strlen(rhs._str) + 1];
+            strcpy(_str, rhs._str);
+        }
+        return *this;
+    }
+    String &operator=(String&& rhs){//赋值运算符重载
+        cout<<"String &&operator=called"<<endl;
+        if (this != &rhs){
+            delete[] _str;
+            _str = rhs._str;
+            rhs._str = nullptr;
+        }
+        return *this;
+    }
+    ~String(){
+        if (_str){
+        delete [] _str;
+        _str = nullptr;
+        }
+    }
+private:
+    char* _str;
+};
+void test0(){
+    cout<<"s1:";
+    String s1;//调用默认构造函数
+
+    cout<<endl<<"s2:";
+    String s2 = "hello";
+
+    cout<<endl<<"s3:";
+    String s3 = move(s2);//显式调用移动赋值函数
+
+    cout<<endl<<"s4:";
+    String s4 = String("world");//隐式调用移动赋值函数
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+#### std::move函数
+
+在一些使用移动语义的场景下，有时需要将左值转为右值。std::move函数的作用是显式 的将一个左值转换为右值， 其实现本质上就是一个强制转换。当将一个左 值显式转换为右值后，原来的左值对象就无法正常工作了，必须要重新赋值才可以继续使用。
+
+~~~c++
+#include <iostream>
+#include <utility>
+using namespace std;
+
+class Demo {
+public:
+    Demo() { cout << "default ctor\n"; }
+    Demo(const Demo&) { cout << "copy ctor\n"; }
+    Demo(Demo&&) { cout << "move ctor\n"; }
+};
+
+int main() {
+    Demo a;
+    Demo b = std::move(a);  // 👈 调用移动构造
+}
+~~~
+
+#### 右值引用本身的性质
+
+~~~c++
+int && func(){
+    return 10;//返回一个右值引用
+}
+int main(){
+    //&func();//ERROR 无法取值，返回的右值引用本身也是一个右值
+    int && ref = func();
+    &ref;//如果由一个右值引用去接收函数的返回值，其本身就是左值
+    
+    return 0;
+}
+~~~
+
+**右值引用本身是左值还是右值，取决于是否有名字，有名字就是左值，没名字就是右值。**
+
+~~~c++
+#include<iostream>
+#include<string.h>
+using namespace std;
+class String
+{
+public:
+    String(): _str(new char[1]()) {
+        cout<<"String()"<<endl;
+    }//默认无参构造函数
+    String(const char* pstr):_str(new char[strlen(pstr) + 1]()){//字符串字面量构造函数
+        cout<<"String(const char* pstr)"<<endl;
+        strcpy(_str, pstr);
+    }
+    String(const String& rhs) :_str(new char[strlen(rhs._str) + 1]()){//拷贝构造函数
+        cout<<"String(const String& rhs)"<<endl;
+        strcpy(_str, rhs._str);
+    }
+    String(String && rhs)//右值引用构造函数
+    : _str(rhs._str)
+    {
+        cout << "String(String&&)" << endl;
+        rhs._str = nullptr;
+    }
+    String &operator=(const String &rhs){//赋值运算符重载
+        cout<<"String &operator=(const String &rhs)"<<endl;
+        if (this != &rhs){
+            delete[] _str;
+            _str = new char[strlen(rhs._str) + 1];
+            strcpy(_str, rhs._str);
+        }
+        return *this;
+    }
+    String &operator=(String&& rhs){//赋值运算符重载
+        cout<<"String &&operator=called"<<endl;
+        if (this != &rhs){
+            delete[] _str;
+            _str = rhs._str;
+            rhs._str = nullptr;
+        }
+        return *this;
+    }
+    void print(){
+        cout<<_str<<endl;
+    }
+    ~String(){
+        if (_str){
+        delete [] _str;
+        _str = nullptr;
+        }
+    }
+private:
+    char* _str;
+};
+String func(){
+    String str1("wangdao");
+    str1.print();
+    return str1;
+}
+void test0(){
+    func();
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+运行结果如下：
+
+![image-20250425142554775](./c++.assets/image-20250425142554775.png)
+
+之前提到当对象作为返回值时会调用拷贝构造函数，但是发现结果是调用了移动构造函数。当返回的对象其生命周期即将结束，就不再调用拷贝构造函数，而是调用移动构造函数。
+
+当类中同时定义移动构造函数和拷贝构造函数，需要对以前的规则进行补充， 调用 哪个函数还需要取决于返回的对象的生命周期。
+
+### 资源管理
+
+#### RAII技术
+
+所谓RAII，是C++提出的资源管理的技术，全称为 Resource Acquisition Is Initialization，由C++之父Bjarne Stroustrup提出。其本质是利用对 象的生命周期来管理资源（内存资源、文件描述符、文件、锁等），因为当对象的生命周期结束时，会自动调用析构函数。
+
+##### RAII类的常见特征
+
+RAII技术具有一下基本特征：
+
+- 在构造函数中初始化资源，或托管资源；
+- 在析构函数中释放资源
+- 一般不允许复制或赋值
+- 提供若然访问资源的方法
+
+##### RAII类的模拟
+
+~~~c++
+template <class T>
+class RAII{
+public:
+    //1.在构造函数中初始化资源（托管资源）
+    RAII(T *data)
+    :_data(data){
+        cout<<"RAII(T*)"<<endl;
+    }
+    //2.在析构函数中释放资源
+    ~RAII(){
+        cout<<"~RAII()"<<endl;
+        if(_data){
+            delete _data;
+            _data = nullptr;
+        }
+    }
+    //3.提供若然访问资源的方法
+    T * operator->(){
+        return _data;
+    }
+    T & operator*(){
+        return *_data;
+    }
+    T * get() const{
+        return _data;
+    }
+    void set(T * data){
+        if(_data){
+            delete _data;
+            _data = nullptr;
+        }
+        _data = data;
+    }
+    //4.不允许复制或赋值
+    RAII(const RAII & rhs) = delete;
+    RAII& operator=(const RAII & rhs) = delete;
+private:
+    T * _data;
+};
+~~~
+
+RAII技术的本质：利用栈对象的生命周期管理资源，因为栈对象在离开作用域时候，会执行析构函数。
+
+#### 智能指针
+
+##### unique_ptr的使用
+
+`unique_ptr<T>`是一个独占所有权的智能指针：
+
+- 每个unique_ptr拥有一个资源（比如通过 `new` 分配的对象）
+- 所有权不能被复制，只能 **移动**
+- 当 `unique_ptr` 被销毁时，它会自动 `delete` 所管理的资源
+
+特点1：不允许复制或赋值
+
+特点2：独享所有权的智能指针
+
+~~~c++
+void test0(){
+    unique_ptr<int> up(new int(10));
+    cout << "*up:" << *up << endl;
+    cout << "up.get(): " << up.get() << endl;
+    cout << endl;
+    //独享所有权的智能指针，对托管的空间独立拥有
+    //拷贝构造已经被删除
+    unique_ptr<int> up2 = up;//复制操作 error
+    //赋值运算符函数也被删除
+    unique_ptr<int> up3(new int(20));
+    up3 = up;//赋值操作 error 
+}
+~~~
+
+特点3：作为容器元素
+
+要利用移动语义的特点，可以直接传递unique_ptr的右值作为容器的元素。如果传入左值 形态的unique_ptr，会进行复制操作，而unique_ptr是不能复制的。
+
+构建右值的方式有
+
+1、std::move的方式
+
+2、可以直接使用unique_ptr的构造函数，创建匿名对象（临时对象），构建右值
+
+~~~c++
+void test0(){
+    vector<unique_ptr<Point>> vec;
+    unique_ptr<Point> up4(new Point(10,20));
+    vec.push_back(up4);  //error
+    vec.push_back(std::move(up4));  //ok
+    vec.push_back(unique_ptr<Point>(new Point(1,3))); //ok
+}
+~~~
+
+`vec.pushback`会尝试调用类的拷贝构造函数，但`unqiue_ptr`的拷贝构造函数是被禁用的，因此报错！
+
+##### shared_ptr的使用
+
+shared_ptr就是共享所有权的智能指针，可以进行复制或赋值，但复制或赋值时，并不是 真正拷贝对象，而只是将引用计数加1了。即shared_ptr引入了引用计数，其思想与COW 技术类似，又称为是强引用的智能指针。
+
+特征1：共享所有权的智能指针
+可以使用引用计数记录对象的个数。
+
+特征2：可以进行复制或赋值
+表明具备值语义。
+
+特征3：可以作为容器元素
+作为容器元素时，既可以传递左值，也可以传递右值。（区别于unique_ptr只能传右值）
+
+特征4：也具备移动语义
+表明也有移动构造函数和移动赋值函数。
+
