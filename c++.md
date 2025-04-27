@@ -5856,15 +5856,167 @@ void test0(){
 
 shared_ptr就是共享所有权的智能指针，可以进行复制或赋值，但复制或赋值时，并不是 真正拷贝对象，而只是将引用计数加1了。即shared_ptr引入了引用计数，其思想与COW 技术类似，又称为是强引用的智能指针。
 
-特征1：共享所有权的智能指针
+**特征1：共享所有权的智能指针**
 可以使用引用计数记录对象的个数。
 
-特征2：可以进行复制或赋值
+**特征2：可以进行复制或赋值**
 表明具备值语义。
 
 特征3：可以作为容器元素
 作为容器元素时，既可以传递左值，也可以传递右值。（区别于unique_ptr只能传右值）
 
-特征4：也具备移动语义
+**特征4：也具备移动语义**
 表明也有移动构造函数和移动赋值函数。
+
+~~~c++
+#include<iostream>
+#include<memory>
+using namespace std;
+int main(){
+    shared_ptr<int> sp(new int(10));
+    cout<<"sp.use_count():"<<sp.use_count()<<endl;
+    shared_ptr<int> sp2 = sp;
+    cout<<"sp.use_count():"<<sp.use_count()<<endl;
+    cout<<"sp2.use_count():"<<sp2.use_count()<<endl;
+
+    shared_ptr<int> sp3(new int(30));
+    sp3 = sp;
+    cout << "sp.use_count(): " << sp.use_count() << endl;
+    cout << "sp2.use_count(): " << sp2.use_count() << endl;
+    cout << "sp3.use_count(): " << sp3.use_count() << endl;
+    cout << "*sp:" << *sp << endl;
+    cout << "*sp2:" << *sp2 << endl;
+    cout << "*sp3:" << *sp3 << endl;
+    cout << "sp.get():" << sp.get() << endl;
+    cout << "sp2.get():" << sp2.get() << endl;
+    cout << "sp3.get():" << sp3.get() << endl;
+
+    return 0;
+}
+~~~
+
+##### shared_pte的循环引用
+
+~~~c++
+class Child;
+
+class Parent{
+public:
+    Parent(){cout<<"Parent()"<<endl;}
+    ~Parent(){cout<<"~Parent()"<<endl;}
+    shared_ptr<Child> spChild;
+};
+class Child{
+public:
+    Child(){cout<<"Child()"<<endl;}
+    ~Child(){cout<<"~Child()"<<endl;}
+    shared_ptr<Parent> spParent;
+};
+void test0(){
+    shared_ptr<Parent> parentPtr(new Parent());
+    shared_ptr<Child> childPtr(new Child());
+    //获取到的引用计数都是1
+    cout << "parentPtr.use_count():" << parentPtr.use_count() << endl;
+    cout << "childPtr.use_count():" << childPtr.use_count() << endl;
+
+    parentPtr->spChild = childPtr;
+    childPtr->spParent = parentPtr;
+    //获取到的引用计数都是2
+    cout<<"parentPtr.use_count()"<<parentPtr.use_count()<<endl;
+    cout<<"childPtr.use_count()"<<childPtr.use_count()<<endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+程序结束时，发现Parent和Child的析构函数都没有被调用
+
+![image-20250427094327822](./c++.assets/image-20250427094327822.png)
+
+childPtr和parentPtr会先后销毁，但是堆上的Parent对象和Child对象的引用计数都变成了 1，而不会减到0，所以没有回收
+
+![image-20250427094402495](./c++.assets/image-20250427094402495.png)
+
+希望某一个指针指向一片空间，能够指向，但是不会使引用计数加1，那么堆上的 Parent对象和Child对象必然有一个的引用计数是1，栈对象再销毁的时候，就可以使引用 计数减为0。 shared_ptr无法实现这一效果，所以引入了weak_ptr.
+
+>weak_ptr是一个弱引用的智能指针，不会增加引用计数。
+>
+>shared_ptr是一个强引用的智能指针。
+>
+>强引用，指向一定会增加引用计数，只要有一个引用存在，对象就不能释放；
+>
+>弱引用并不增加对象的引用计数，但是它知道所托管的对象是否还存活。
+
+循环引用的解法，将Parent类或Child类中的任意一个shared_ptr换成weak_ptr类型的智能指针
+
+~~~c++
+class Child;
+
+class Parent{
+public:
+    Parent(){cout<<"Parent()"<<endl;}
+    ~Parent(){cout<<"~Parent()"<<endl;}
+    weak_ptr<Child> spChild;//将shared_ptr改为weak_ptr解决循环引用
+};
+class Child{
+public:
+    Child(){cout<<"Child()"<<endl;}
+    ~Child(){cout<<"~Child()"<<endl;}
+    shared_ptr<Parent> spParent;
+};
+void test0(){
+    shared_ptr<Parent> parentPtr(new Parent());
+    shared_ptr<Child> childPtr(new Child());
+    //获取到的引用计数都是1
+    cout << "parentPtr.use_count():" << parentPtr.use_count() << endl;
+    cout << "childPtr.use_count():" << childPtr.use_count() << endl;
+
+    parentPtr->spChild = childPtr;
+    childPtr->spParent = parentPtr;
+    //获取到的引用计数都是2
+    cout<<"parentPtr.use_count()"<<parentPtr.use_count()<<endl;
+    cout<<"childPtr.use_count()"<<childPtr.use_count()<<endl;
+}
+int main(){
+    test0();
+    return 0;
+}
+~~~
+
+![image-20250427095651323](./c++.assets/image-20250427095651323.png)
+
+栈上的childPtr对象先销毁，会使堆上的Child对象的引用计数减1，因为这个Child对象的引 用计数本来就是1，所以减为了0，回收这个Child对象，造成堆上的Parent对象的引用计数 也减1；再当parentPtr销毁时，会再让堆上的Parent对象的引用计数减1，所以也能够回收。
+
+![image-20250427095724951](./c++.assets/image-20250427095724951.png)
+
+![image-20250427095745230](./c++.assets/image-20250427095745230.png)
+
+##### weak_ptr的使用
+
+weak_ptr是弱引用的智能指针，它是shared_ptr的一个补充，使用它进行复制或者赋值时，并不会导致引用计数加1，是为了解决shared_ptr的问题而诞生的。weak_ptr知道所托管的对象是否还存活，如果存活，必须要提升为shared_ptr才能对资源 进行访问，不能直接访问。
+
+> 初始化
+>
+> ~~~c++
+> weak_ptr<int> wp;//无参的方式创建weak_ptr
+> //也可以利用shared_ptr创建weak_ptr
+> weak_ptr<int> wp2(sp);
+> ~~~
+
+> 判断关联空间是否还在
+>
+> 1.可以直接使用use_count函数
+> 如果use_count的返回值大于0，表明关联的空间还在。
+>
+> 2.将weak_ptr提升为shared_ptr
+>
+> ~~~c++
+> shared_ptr<int> sp(new int(10));
+> weak_ptr<int> wp;//无参方式创建weak_ptr
+> wp = sp;//赋值
+> ~~~
+>
+> 
 
