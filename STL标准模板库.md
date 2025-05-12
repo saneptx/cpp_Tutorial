@@ -1452,6 +1452,15 @@ UnaryFunction for_each( InputIt first, InputIt last, UnaryFunction f );
 
 #### 4、lambda表达式（==重要==）
 
+~~~c++
+[capture](params)opt -> returnType
+{
+    body;
+};
+~~~
+
+其中capture是捕获列表，params是参数列表，opt是函数选项，returnType是返回类型，body是函数体。
+
 ##### 4.1、基本使用
 
 ![image-20240329153155861](STL标准模板库.assets/image-20240329153155861.png)
@@ -1568,6 +1577,126 @@ constexpr InputIt find_if(InputIt first, InputIt last, UnaryPredicate p)
 
 #### 7、bind与function的结合使用
 
+~~~c++
+#include<iostream>
+#include<string>
+#include<math.h>
+#include<functional>
+#define PI 3.14
+using namespace std;
+
+class Figure{
+public:
+    using getNameCallBack = function<string()>;
+    using getAreaCallBack = function<double()>;
+
+    getNameCallBack _getNameCallBack;
+    getAreaCallBack _getAreaCallBack;
+
+    void setGetNameCallBack(getNameCallBack &&cb){
+        _getNameCallBack = std::move(cb);
+    }
+    void setGetAreaCallBack(getAreaCallBack &&cb){
+        _getAreaCallBack = std::move(cb);
+    }
+
+    string handleGetNameCallBack() const{
+        if(_getNameCallBack){
+            return _getNameCallBack();
+        }else{
+            return "";
+        }
+    }
+    double handleGetAreaCallBack() const{
+        if(_getAreaCallBack){
+            return _getAreaCallBack();
+        }else{
+            return 0.0;
+        }
+    }
+};
+class Rectangle//矩形
+{
+public:
+    Rectangle(double len,double wid)
+    : _length(len)
+    , _width(wid){}
+    string getName() const
+    {
+        return "矩形";
+    }
+    double getArea() const
+    {
+        return _length * _width;
+    }
+private:
+    double _length;
+    double _width;
+};
+class Circle
+{
+public:
+    Circle(double r)
+    : _radius(r){}
+    string getName() const
+    {
+        return "圆形";
+    }
+    double getArea() const
+    {
+        return PI * _radius * _radius;
+    }
+private:
+    double _radius;
+};
+class Triangle
+{
+public:
+    Triangle(double a,double b,double c)
+    : _a(a)
+    , _b(b)
+    , _c(c)
+    {}
+    string getName() const
+    {
+        return "三角形";
+    }
+    double getArea() const
+    {
+        double p = (_a + _b + _c)/2;
+        return sqrt(p * (p-_a) * (p- _b)* (p- _c));
+    }
+private:
+    double _a,_b,_c;
+};
+
+void test(){
+    Rectangle rectangle(5,10);
+    Circle circle(5);
+    Triangle triangle(3,4,5);
+
+    Figure figure;
+    figure.setGetNameCallBack(bind(&Rectangle::getName,&rectangle));
+    cout<<figure.handleGetNameCallBack()<<endl;
+    figure.setGetAreaCallBack(bind(&Rectangle::getArea,&rectangle));
+    cout<<figure.handleGetAreaCallBack()<<endl;
+
+    figure.setGetNameCallBack(bind(&Circle::getName,&circle));
+    cout<<figure.handleGetNameCallBack()<<endl;
+    figure.setGetAreaCallBack(bind(&Circle::getArea,&circle));
+    cout<<figure.handleGetAreaCallBack()<<endl;
+
+    figure.setGetNameCallBack(bind(&Triangle::getName,&triangle));
+    cout<<figure.handleGetNameCallBack()<<endl;
+    figure.setGetAreaCallBack(bind(&Triangle::getArea,&triangle));
+    cout<<figure.handleGetAreaCallBack()<<endl;
+}
+int main(){
+    test();
+    return 0;
+}
+~~~
+
 ![image-20240330122646326](STL标准模板库.assets/image-20240330122646326.png)
 
 ![image-20240330122714448](STL标准模板库.assets/image-20240330122714448.png)
@@ -1580,6 +1709,67 @@ constexpr InputIt find_if(InputIt first, InputIt last, UnaryPredicate p)
 
 ### 一、成员函数适配器mem_fn
 
+~~~c++
+#include<iostream>
+#include<vector>
+#include<algorithm>
+#include<functional>
+using namespace std;
+
+class Number{
+public:
+    Number(size_t data = 0)
+    :_data(data){};
+
+    void print(){
+        cout<<_data<<" ";
+    }
+
+    bool isEven(){
+        return (_data % 2 ==0);
+    }
+
+    bool isPrimer(){
+        if(1 == _data){
+            return false;
+        }
+        for(size_t idx = 2;idx <= _data/2; ++idx){
+            if(_data % idx == 0){
+                return false;
+            }
+        }
+        return true;
+    }
+private:
+    size_t _data;
+};
+
+void test(){
+    vector<Number> vec;
+    for(size_t idx = 1;idx != 30;++idx){
+        vec.push_back(Number(idx));
+    }
+    // for_each(vec.begin(),vec.end(),mem_fn(&Number::print));//第一种写法
+    using namespace std::placeholders;
+    for_each(vec.begin(),vec.end(),bind(&Number::print,_1));//也可以使用bind绑定
+    cout<<endl;
+
+    //移除所有偶数
+    vec.erase(remove_if(vec.begin(),vec.end(),mem_fn(&Number::isEven)),vec.end());
+    for_each(vec.begin(),vec.end(),mem_fn(&Number::print));
+    cout<<endl;
+
+    //移除所有质数
+    vec.erase(remove_if(vec.begin(),vec.end(),mem_fn(&Number::isPrimer)),vec.end());
+    for_each(vec.begin(),vec.end(),mem_fn(&Number::print)); 
+    cout<<endl;
+}
+int main(){
+    test();
+    return 0;
+}
+~~~
+
 ![image-20240401111408759](STL标准模板库.assets/image-20240401111408759.png)
 
 ### 二、函数对象（仿函数）
@@ -1589,8 +1779,6 @@ constexpr InputIt find_if(InputIt first, InputIt last, UnaryPredicate p)
 - 函数名
 - 函数指针
 - 重载了函数调用运算符的类创建的对象
-
-
 
 ### 三、空间配置器（==重要，难==）
 
