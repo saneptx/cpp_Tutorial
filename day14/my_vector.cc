@@ -80,17 +80,23 @@ void Vector<T>::reallocate(){
 
 void printCapacity(const Vector<int> &con){
     cout<<"size()="<<con.size()<<endl;
-    cout<<"size()="<<con.size()<<endl;
+    cout<<"capacity()="<<con.capacity()<<endl;
 }
 void test(){
     Vector<int> vec;
-
+    printCapacity(vec);
     vec.push_back(1);
+    printCapacity(vec);
     vec.push_back(2);
+    printCapacity(vec);
     vec.push_back(3);
+    printCapacity(vec);
     vec.push_back(4);
+    printCapacity(vec);
     vec.push_back(5);
+    printCapacity(vec);
 }
 int main(){
+    test();
     return 0;
 }
