@@ -18,6 +18,13 @@ public:
         }
     }
 
+    using iterator = T *;
+    iterator begin(){
+        return _start;
+    }
+    iterator end(){
+        return _finish;
+    }
     void push_back(const T &);
     void pop_back();
 
@@ -26,7 +33,7 @@ public:
 private:
     void reallocate();
 private:
-    static std::allocator<T> _alloc;
+    static std::allocator<T> _alloc;//空间配置器
 
     T * _start;
     T * _finish;
@@ -95,6 +102,11 @@ void test(){
     printCapacity(vec);
     vec.push_back(5);
     printCapacity(vec);
+
+    for(auto &elem: vec){
+        cout<<elem<<" ";
+    }
+    cout<<endl;
 }
 int main(){
     test();

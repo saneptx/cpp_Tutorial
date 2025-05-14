@@ -51,6 +51,7 @@
         "compare": "cpp",
         "concepts": "cpp",
         "numbers": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "unordered_set": "cpp"
     }
 }
