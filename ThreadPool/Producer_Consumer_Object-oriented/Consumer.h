@@ -1,17 +1,15 @@
-#ifndef __PRODUCER_H__
-#define __PRODUCER_H__
+#ifndef __CONSUMER_H__
+#define __CONSUMER_H__
 
 #include "Thread.h"
 #include "TaskQueue.h"
-#include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
 
-class Producer
+class Consumer
 :public Thread{
 public:
-    Producer(TaskQueue &taskQueue);
-    ~Producer();
+    Consumer(TaskQueue &taskQueue);
+    ~Consumer();
     void run() override;
 private:
     TaskQueue &_taskQueue;

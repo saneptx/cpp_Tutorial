@@ -1,19 +1,18 @@
 #include"Producer.h"
 
 
-Producer::Producer(TaskQueue &taskQueue)
-:_taskQueue(taskQueue){
+Producer::Producer(){
 
 }
 Producer::~Producer(){
 
 }
-void Producer::run(){
+void Producer::produce(TaskQueue &taskQueue){
     srand(clock());//种随机种子
     int cnt = 20;
     while(cnt--){
         int number = rand() % 100;//产生随机数
-        _taskQueue.push(number);
+        taskQueue.push(number);
         cout<<"Producer produce:"<<number<<endl;
         sleep(1);
     }
