@@ -62,3 +62,43 @@ InetAddress TcpConnection::getPeerAddr(){
 
     return InetAddress(addr);
 }
+
+bool TcpConnection::isClosed() const{
+    char buf[10]={0};
+    int ret = ::recv(_sock.fd(),buf,sizeof(buf),MSG_PEEK);
+
+    return (0 == ret);
+}
+
+void TcpConnection::setNewConnectionCallback(const TcpConnectionCallback &cb){
+    _onNewConnectionCb = cb;
+}
+void TcpConnection::setMessageCallback(const TcpConnectionCallback &cb){
+    _onMessageCb = cb;
+}
+void TcpConnection::setCloseCallback(const TcpConnectionCallback &cb){
+    _onCloseCb = cb;
+}
+
+
+void TcpConnection::handleNewConnectionCallback(){
+    if(_onNewConnectionCb){
+        _onNewConnectionCb(shared_from_this());
+    }else{
+        cout<<"_onNewConnectionCb == nullptr"<<endl;
+    }
+}
+void TcpConnection::handleMessageCallback(){
+    if(_onMessageCb){
+        _onMessageCb(shared_from_this());
+    }else{
+        cout<<"_onMessageCb == nullptr"<<endl;
+    }
+}
+void TcpConnection::handleCloseCallback(){
+    if(_onCloseCb){
+        _onCloseCb(shared_from_this());
+    }else{
+        cout<<"_onCloseCb == nullptr"<<endl;
+    }
+}

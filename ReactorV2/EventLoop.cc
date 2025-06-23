@@ -70,18 +70,31 @@ void EventLoop::handleNewConnection(){
         perror("handleNewConnection accpet");
         return;
     }
+    addEpollReadFd(connfd);
     TcpConnectionPtr connPtr(new TcpConnection(connfd));
+    connPtr->setNewConnectionCallback(_onNewConnectionCb);
+    connPtr->setMessageCallback(_onMessageCb);
+    connPtr->setCloseCallback(_onCloseCb);
     connPtr->toString();
     _conns[connfd] = connPtr;
-    addEpollReadFd(connfd);
+    connPtr->handleNewConnectionCallback();
 }
 void EventLoop::handleMessage(int fd){
     auto it = _conns.find(fd);
     if(it != _conns.end()){
         //连接存在可以进行收发消息
-
+        bool flag = it->second->isClosed();
+        if(flag){
+            it->second->handleCloseCallback();
+            delEpollReadFd(fd);//断开连接后删除监听
+            _conns.erase(it);
+        }else{
+            it->second->handleMessageCallback();
+        }
     }else{
         //连接不存在，直接让程序退出
+        cout<<"连接不存在！"<<endl;
+        return;
     }
 }
 int EventLoop::createEpollFd(){
@@ -94,7 +107,7 @@ int EventLoop::createEpollFd(){
 }
 void EventLoop::addEpollReadFd(int fd){
     struct  epoll_event evt;
-    evt.events = EPOLLIN | EPOLLOUT;
+    evt.events = EPOLLIN;
     evt.data.fd = fd;
     
     int ret = ::epoll_ctl(_epfd,EPOLL_CTL_ADD,fd,&evt);
@@ -113,4 +126,14 @@ void EventLoop::delEpollReadFd(int fd){
         perror("epoll_ctl_del");
         return;
     }
+}
+
+void EventLoop::setNewConnectionCallback(TcpConnectionCallback &&cb){
+    _onNewConnectionCb = std::move(cb);
+}
+void EventLoop::setMessageCallback(TcpConnectionCallback &&cb){
+    _onMessageCb = std::move(cb);
+}
+void EventLoop::setCloseCallback(TcpConnectionCallback &&cb){
+    _onCloseCb = std::move(cb);
 }
