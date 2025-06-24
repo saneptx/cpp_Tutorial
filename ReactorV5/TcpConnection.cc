@@ -15,12 +15,15 @@ TcpConnection::TcpConnection(int fd,EventLoop *loop)
 ,_peerAddr(getPeerAddr()){
 
 }
+
 TcpConnection::~TcpConnection(){
 
 }
+
 void TcpConnection::send(const string &msg){
     _sockIO.writen(msg.c_str(),msg.size());
 }
+
 void TcpConnection::sendInLoop(const string &msg){
     if(_loop){
         _loop->runInLoop(std::move(bind(&TcpConnection::send,this,msg)));

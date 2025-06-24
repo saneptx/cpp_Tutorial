@@ -1,6 +1,15 @@
 #include "TcpServer.h"
 #include "TcpConnection.h"
 
+MyTask::MyTask(const string &msg,TcpConnectionPtr connPtr)
+:_msg(msg)
+,_connPtr(connPtr){
+
+}
+void MyTask::process(){
+    _connPtr->sendInLoop(_msg);
+}
+
 TcpServer::TcpServer(const string &ip,unsigned short port,size_t thread_num,size_t queue_size)
 :_acceptor(ip,port)
 ,_loop(_acceptor)
@@ -12,12 +21,12 @@ TcpServer::~TcpServer(){
 }
 
 void TcpServer::start(){
+    _pool.start();//注意要先启动线程池，否则会阻塞在_loop.loop()函数
     _loop.setNewConnectionCallback(std::bind(&TcpServer::onNewConnection,this,std::placeholders::_1));
     _loop.setMessageCallback(std::bind(&TcpServer::onMessage,this,std::placeholders::_1));
     _loop.setCloseCallback(std::bind(&TcpServer::onClose,this,std::placeholders::_1));
     _acceptor.ready();
     _loop.loop();
-    _pool.start();
 }
 void TcpServer::stop(){
     _loop.unloop();

@@ -8,14 +8,8 @@
 
 class MyTask{
 public:
-    MyTask(const string &msg,TcpConnectionPtr connPtr)
-    :_msg(msg)
-    ,_connPtr(connPtr){
-        
-    }
-    void process(){
-        _connPtr->sendInLoop(_msg);
-    }
+    MyTask(const string &msg,TcpConnectionPtr connPtr);
+    void process();
 private:
     string _msg;
     TcpConnectionPtr _connPtr;
