@@ -39,7 +39,6 @@ void TcpServer::onNewConnection(const TcpConnectionPtr &connPtr){
 void TcpServer::onMessage(const TcpConnectionPtr &connPtr){
     string msg = connPtr->recive();
     cout<<">>recv client msg = "<< msg;
-    //业务逻辑处理
     MyTask task(msg,connPtr);
     _pool.addTask(std::bind(&MyTask::process,task));
 }
